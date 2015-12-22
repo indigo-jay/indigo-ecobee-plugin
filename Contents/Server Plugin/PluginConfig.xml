@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<PluginConfig>
+	<SupportURL>http://www.yourdomain.com/plugin/config.html</SupportURL>
+
+  <Field id="getPin" type="button">
+    <Label>Click to obtain an Ecobee PIN:</Label>
+    <Title>Get PIN</Title>
+    <CallbackMethod>request_pin</CallbackMethod>
+  </Field>
+	<Field id="pin" type="textfield" readonly="true">
+		<Label>PIN:</Label>
+	</Field>
+
+</PluginConfig>
