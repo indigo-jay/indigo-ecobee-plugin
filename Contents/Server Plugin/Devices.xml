@@ -15,7 +15,7 @@
 	 also specify your own custom actions and additional states, if needed.
 
 	 The Device example below specifies the thermostat type.
-	 
+
 	 Devices must also specify a unique typeID - so, for instance, if you define
 	 2 different thermostat type devices then your plugin can distinguish between
 	 the two by the typeID.
@@ -27,14 +27,19 @@
 	and will support Indigo and Indigo Touch's native UI for thermostat type
 	devices.
 	-->
-	<Device type="thermostat" id="NestThermo">
-		<Name>Nest Thermostat Module</Name>
+	<Device type="thermostat" id="EcobeeThermostat">
+		<Name>Ecobee Thermostat Module</Name>
 		<ConfigUI>
 			<!-- The ConfigUI here is just an example of the type of device
 			specific UI that might be needed. Here you might specify a text
 			field for an IP address, a serial port popup, or other device
 			specific options.
 			-->
+
+
+
+
+			<!--
 			<Field id="username" type="textfield" defaultValue="youremail@mac.com">
 				<Label>Nest.com Login:</Label>
 			</Field>
@@ -48,6 +53,9 @@
 			<Field id="devicelocation" type="textfield" defaultValue="Home">
 				<Label>Location Name (as shown on Nest.com):</Label>
 			</Field>
+			-->
+
+
 			<!-- By default thermostat type devices automatically inherit these
 			device properties which describe the characteristics of a specific
 			thermostat instance:
@@ -55,7 +63,7 @@
 				NumTemperatureInputs:			should range between 1 and 3
 				NumHumidityInputs:				should range between 0 and 3
 				ShowCoolHeatEquipmentStateUI:	True or False
-			
+
 			Plugins can update these properties either in device ConfigUI
 			(like below), or can update them from python by using the
 			dev.replacePluginPropsOnServer() method, most likely inside your
@@ -76,7 +84,7 @@
 				hvacOperationModeIsAuto, hvacOperationModeIsProgramHeat, hvacOperationModeIsProgramCool,
 				hvacOperationModeIsProgramAuto,
 				hvacFanModeIsAuto, hvacFanModeIsAlwaysOn, hvacFaneModeIsCycle.
-			
+
 			Additionally, the following writable states are inherited:
 
 				temperatureInput1, temperatureInput2, temperatureInput3,
@@ -84,7 +92,7 @@
 				setpointHeat, setpointCool,
 				hvacOperationMode, hvacFanMode,
 				hvacCoolerIsOn, hvacHeaterIsOn, hvacFanIsOn
-			
+
 			The Indigo Server automatically updates some of the read-only states when
 			a writable state is updated. For example, if your plugin updates the
 			temperatureInput1 state then the temperatureInputsAll state is automatically
@@ -105,5 +113,24 @@
 				<ControlPageLabel>Away</ControlPageLabel>
 			</State>
 		</States>
+	</Device>
+
+	<Device type="custom" id="ecobeeRemoteSensor">
+		<Name>Ecobee Remote Sensor</Name>
+		<ConfigUI>
+			<Field id="sensorID" type="menu">
+				<List class="self" filter="" method="get_remote_sensors"/>
+			</Field>
+		</ConfigUI>
+		<State id="temperature" readonly="true">
+			<ValueType>Float</ValueType>
+			<TriggerLabel>Temperature</TriggerLabel>
+			<ControlPageLabel>Temperature</ControlPageLabel>
+		</State>
+		<State id="occupied" readonly="true">
+			<ValueType boolType="YesNo">Boolean</ValueType>
+			<TriggerLabel>Occupied</TriggerLabel>
+			<ControlPageLabel>Occupied</ControlPageLabel>
+		</State>
 	</Device>
 </Devices>

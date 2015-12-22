@@ -64,6 +64,18 @@ class Plugin(indigo.PluginBase):
 		self.ecobee.update()
 		indigo.server.log(json.dumps(self.ecobee.thermostats))
 
+	def get_remote_sensors(self, filter="", valuesDict=None, typeId="", targetId=0):
+		self.ecobee.update()
+		remote_sensors = self.ecobee.get_remote_sensors(0)
+
+		indigo.server.log(u"all remote sensors: %s" % json.dumps(remote_sensors))
+
+		menuItems = []
+		for rs in remote_sensors:
+			indigo.server.log(u"remote sensor: %s" % rs)
+			menuItems.append((rs.get('code'), rs.get('name')))
+		return menuItems
+
 	def _get_keys_from_ecobee(self, valuesDict):
 		valuesDict[ACCESS_TOKEN_PLUGIN_PREF] = self.ecobee.access_token
 		valuesDict[AUTHORIZATION_CODE_PLUGIN_PREF] = self.ecobee.authorization_code
