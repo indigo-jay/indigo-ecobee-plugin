@@ -118,8 +118,8 @@
 	<Device type="custom" id="ecobeeRemoteSensor">
 		<Name>Ecobee Remote Sensor</Name>
 		<ConfigUI>
-			<Field id="sensorID" type="menu">
-				<List class="self" filter="" method="get_remote_sensors"/>
+			<Field id="address" type="menu">
+				<List class="self" method="get_remote_sensors"/>
 			</Field>
 		</ConfigUI>
 		<State id="temperature" readonly="true">
