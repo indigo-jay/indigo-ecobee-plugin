@@ -36,7 +36,6 @@ class Plugin(indigo.PluginBase):
 	def __del__(self):
 		indigo.PluginBase.__del__(self)
 
-
 	def startup(self):
 		indigo.server.log(u"startup called")
 
@@ -46,9 +45,12 @@ class Plugin(indigo.PluginBase):
 	def request_pin(self, valuesDict = None):
 		indigo.server.log(u"requesting pin")
 		self.ecobee.request_pin()
-		indigo.server.log(self.ecobee.pin)
+		indigo.server.log(u"received pin: %s" % self.ecobee.pin)
 		valuesDict['pin'] = self.ecobee.pin
 		return valuesDict
+
+	def open_browser_to_ecobee(self, valuesDict = None):
+		self.browserOpen("http://www.ecobee.com")
 
 	def runConcurrentThread(self):
 		try:

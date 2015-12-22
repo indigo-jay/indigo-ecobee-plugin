@@ -3,12 +3,17 @@
 	<SupportURL>http://www.yourdomain.com/plugin/config.html</SupportURL>
 
   <Field id="getPin" type="button">
-    <Label>Click to obtain an Ecobee PIN:</Label>
+    <Label>1. Click to obtain an Ecobee PIN:</Label>
     <Title>Get PIN</Title>
     <CallbackMethod>request_pin</CallbackMethod>
   </Field>
 	<Field id="pin" type="textfield" readonly="true">
 		<Label>PIN:</Label>
 	</Field>
+	<Field id="openEcobee" type="button">
+    <Label>2. Register the PIN on your Ecobee account:</Label>
+    <Title>Open Ecobee Site</Title>
+    <CallbackMethod>open_browser_to_ecobee</CallbackMethod>
+  </Field>
 
 </PluginConfig>
