@@ -4,6 +4,9 @@ import json
 import indigo
 
 DEBUG=False
+ACCESS_TOKEN_PLUGIN_PREF='accessToken'
+AUTHORIZATION_CODE_PLUGIN_PREF='authorizationCode'
+REFRESH_TOKEN_PLUGIN_PREF='refreshToken'
 
 class IndigoLogger:
 	def write(self, text):
@@ -19,18 +22,21 @@ class Plugin(indigo.PluginBase):
 		sys.stdout = IndigoLogger()
 
 		tmpconfig = {'API_KEY': "qyy0od74EpMz2P8X1fmAfyoxKod4t1Fo"}
-		if 'ACCESS_TOKEN' in pluginPrefs:
-			tmpconfig['ACCESS_TOKEN'] = pluginPrefs['ACCESS_TOKEN']
-		if 'AUTHORIZATION_CODE' in pluginPrefs:
-			tmpconfig['AUTHORIZATION_CODE'] = pluginPrefs['AUTHORIZATION_CODE']
-		if 'REFRESH_TOKEN' in pluginPrefs:
-			tmpconfig['REFRESH_TOKEN'] = pluginPrefs['REFRESH_TOKEN']
+		if ACCESS_TOKEN_PLUGIN_PREF in pluginPrefs:
+			tmpconfig['ACCESS_TOKEN'] = pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF]
+		if AUTHORIZATION_CODE_PLUGIN_PREF in pluginPrefs:
+			tmpconfig['AUTHORIZATION_CODE'] = pluginPrefs[AUTHORIZATION_CODE_PLUGIN_PREF]
+		if REFRESH_TOKEN_PLUGIN_PREF in pluginPrefs:
+			tmpconfig['REFRESH_TOKEN'] = pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF]
 		indigo.server.log(u"constructed config: %s" % json.dumps(tmpconfig))
 
 		# Create an ecobee object with the config dictionary
 		indigo.server.log(u"initializing ecobee module")
 		self.ecobee = Ecobee(config = tmpconfig)
 		indigo.server.log(u"ecobee module initialized")
+
+		self.pluginPrefs["pin"] = self.ecobee.pin
+		self.pluginPrefs["authorizationCode"] = self.ecobee.authorization_code
 
 
 	def __del__(self):
@@ -51,6 +57,18 @@ class Plugin(indigo.PluginBase):
 
 	def open_browser_to_ecobee(self, valuesDict = None):
 		self.browserOpen("http://www.ecobee.com")
+
+	def refresh_credentials(self, valuesDict = None):
+		self.ecobee.request_tokens()
+		self._get_keys_from_ecobee(valuesDict)
+		self.ecobee.update()
+		indigo.server.log(json.dumps(self.ecobee.thermostats))
+
+	def _get_keys_from_ecobee(self, valuesDict):
+		valuesDict[ACCESS_TOKEN_PLUGIN_PREF] = self.ecobee.access_token
+		valuesDict[AUTHORIZATION_CODE_PLUGIN_PREF] = self.ecobee.authorization_code
+		valuesDict[REFRESH_TOKEN_PLUGIN_PREF] = self.ecobee.refresh_token
+		return valuesDict
 
 	def runConcurrentThread(self):
 		try:

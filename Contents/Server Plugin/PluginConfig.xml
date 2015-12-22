@@ -15,5 +15,21 @@
     <Title>Open Ecobee Site</Title>
     <CallbackMethod>open_browser_to_ecobee</CallbackMethod>
   </Field>
+	<Field id="refreshCredentials" type="button">
+    <Label>3. Refresh your credentials:</Label>
+    <Title>Refresh</Title>
+    <CallbackMethod>refresh_credentials</CallbackMethod>
+  </Field>
+	<Field id="separator1" type="separator"/>
+	<Field id="accessToken" type="textfield" readonly="true">
+		<Label>Access Token:</Label>
+	</Field>
+	<Field id="authorizationCode" type="textfield" readonly="true">
+		<Label>Authorization Code:</Label>
+	</Field>
+	<Field id="refreshToken" type="textfield" readonly="true">
+		<Label>Refresh Token:</Label>
+	</Field>
+
 
 </PluginConfig>
