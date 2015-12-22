@@ -9,16 +9,16 @@
 	<key>IwsApiVersion</key>
 	<string>1.0.0</string>
 	<key>CFBundleDisplayName</key>
-	<string>Ecobee Thermostat</string>
+	<string>Ecobee</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.drjason.ecobeethermostat</string>
+	<string>com.drjason.ecobee</string>
 	<key>CFBundleVersion</key>
 	<string>1.0.0</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>http://ecobeethermostat.drjason.com</string>
+			<string>http://ecobee.drjason.com</string>
 		</dict>
 	</array>
 </dict>
