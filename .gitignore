@@ -1,3 +1,5 @@
 .*
 *.pyc
 nest.plugin.py
+plugin-dir
+*.sh
