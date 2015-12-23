@@ -56,6 +56,8 @@ class EcobeeRemoteSensor:
 		self.dev.updateStateOnServer(key=u"occupied", value=occupied)
 		self.dev.updateStateOnServer(key=u"combinedState", value=combinedState)
 
+		indigo.server.log('remote sensor %s updated: %s' % (self.address, combinedState))
+
 
 class EcobeeThermostat:
 	def __init__(self, address):
