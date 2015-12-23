@@ -76,6 +76,16 @@ class Plugin(indigo.PluginBase):
 		#indigo.server.log(json.dumps(self.ecobee.thermostats))
 		return valuesDict
 
+	def get_thermostats(self, filter="", valuesDict=None, typeId="", targetId=0):
+		self.ecobee.update()
+
+		# list of remote sensors contains the thermostat sensor, too
+		return [
+			(rs.get('id'), rs.get('name'))
+			for rs in self.ecobee.get_remote_sensors(0)
+				if 'thermostat' == rs.get('type')
+		]
+
 	def get_remote_sensors(self, filter="", valuesDict=None, typeId="", targetId=0):
 		self.ecobee.update()
 
@@ -101,7 +111,12 @@ class Plugin(indigo.PluginBase):
 			indigo.server.log("added remote sensor %s" % dev.pluginProps["address"])
 
 		elif dev.model == 'Ecobee Thermostat':
-			self.active_thermostats.append(EcobeeThermostat("foo"))
+			# Add support for the thermostat's humidity sensor
+			newProps = dev.pluginProps
+			newProps["NumHumidityInputs"] = 1
+			dev.replacePluginPropsOnServer(newProps)
+			self.active_thermostats.append(EcobeeThermostat(dev.pluginProps["address"], dev, self.ecobee))
+			indigo.server.log("added thermostat %s" % dev.pluginProps["address"])
 
 #		indigo.server.log(u"device added; plugin props: %s" % dev.pluginProps)
 #		indigo.server.log(u"device added: %s" % dev)
@@ -116,6 +131,8 @@ class Plugin(indigo.PluginBase):
 			while True:
 				for ers in self.active_remote_sensors:
 					ers.updateServer()
+				for t in self.active_thermostats:
+					t.updateServer()
 #				for dev in indigo.devices.iter("self"):
 #					indigo.server.log('dev: %s' % dev)
 #					if not dev.enabled:

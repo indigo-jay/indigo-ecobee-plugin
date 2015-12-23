@@ -28,33 +28,16 @@
 	devices.
 	-->
 	<Device type="thermostat" id="EcobeeThermostat">
-		<Name>Ecobee Thermostat Module</Name>
+		<Name>Ecobee Thermostat</Name>
 		<ConfigUI>
+			<Field id="address" type="menu">
+				<List class="self" method="get_thermostats"/>
+			</Field>
 			<!-- The ConfigUI here is just an example of the type of device
 			specific UI that might be needed. Here you might specify a text
 			field for an IP address, a serial port popup, or other device
 			specific options.
 			-->
-
-
-
-
-			<!--
-			<Field id="username" type="textfield" defaultValue="youremail@mac.com">
-				<Label>Nest.com Login:</Label>
-			</Field>
-			<Field id="password" type="textfield" defaultValue="yournestpass">
-				<Label>Nest.com Password:</Label>
-			</Field>
-			<Field id="sep" type="separator"></Field>
-			<Field id="devicename" type="textfield" defaultValue="My Nest">
-				<Label>Nest Name (as shown on Nest.com):</Label>
-			</Field>
-			<Field id="devicelocation" type="textfield" defaultValue="Home">
-				<Label>Location Name (as shown on Nest.com):</Label>
-			</Field>
-			-->
-
 
 			<!-- By default thermostat type devices automatically inherit these
 			device properties which describe the characteristics of a specific
@@ -112,7 +95,18 @@
 				<TriggerLabel>Away</TriggerLabel>
 				<ControlPageLabel>Away</ControlPageLabel>
 			</State>
+			<State id="occupied" readonly="true">
+				<ValueType boolType="YesNo">Boolean</ValueType>
+				<TriggerLabel>Occupied</TriggerLabel>
+				<ControlPageLabel>Occupied</ControlPageLabel>
+			</State>
+			<State id="combinedState" readonly="true">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Combined State</TriggerLabel>
+				<ControlPageLabel>Combined State</ControlPageLabel>
+			</State>
 		</States>
+		<UiDisplayStateId>combinedState</UiDisplayStateId>
 	</Device>
 
 	<Device type="custom" id="ecobeeRemoteSensor">
