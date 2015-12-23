@@ -19,32 +19,42 @@ class EcobeeRemoteSensor:
 		self.ecobee = ecobee
 		self.updateServer()
 
+	def _matching_sensor(self):
+		# should be exactly one; if not, then ... panic
+#		indigo.server.log('finding matching sensor for %s' % self.address)
+		return [rs for rs in self.ecobee.get_remote_sensors(0) if self.address == rs.get('code')][0]
+
 	def updateServer(self):
 #		indigo.server.log("updating remote sensor from server")
 		if not self.dev.configured:
 			indigo.server.log('remote sensor %s not fully configured yet; not updating state' % self.address)
 			return
+		if not self.ecobee.authenticated:
+			indigo.server.log('not authenticated to ecobee yet; not initilizing state of remote sensor %s' % self.address)
+			return
 		if None == self.ecobee.get_thermostats():
 			indigo.server.log('no thermostats found; authenticated?')
 			return
-		# should be exactly one; if not, then ... panic
-#		indigo.server.log('finding matching sensor for %s' % self.address)
-		matchedSensor = [rs for rs in self.ecobee.get_remote_sensors(0) if self.address == rs.get('code')][0]
-		# ditto
-#		indigo.server.log('finding temperature capability')
-		tempCapability = [c for c in matchedSensor.get('capability') if 'temperature' == c.get('type')][0]
-#		indigo.server.log('temperature capbility: %s' % tempCapability)
-		# ditto again
-#		indigo.server.log('finding occupancy capability')
-		occupancyCapability = [c for c in matchedSensor.get('capability') if 'occupancy' == c.get('type')][0]
-#		indigo.server.log('occupancy capbility: %s' % occupancyCapability)
+		matchedSensor = self._matching_sensor()
 
-		self.dev.updateStateOnServer(key=u"temperature", value=float(tempCapability.get('value')) / 10)
+		# should be exactly one; if not, then ... panic
+		tempCapability = [c for c in matchedSensor.get('capability') if 'temperature' == c.get('type')][0]
+		temperature = float(tempCapability.get('value')) / 10;
+
+		# ditto
+		occupancyCapability = [c for c in matchedSensor.get('capability') if 'occupancy' == c.get('type')][0]
 		if 'true' == occupancyCapability.get('value'):
-			o = True
+			occupied = True
+			occupiedString = "occupied"
 		else:
-			o = False
-		self.dev.updateStateOnServer(key=u"occupied", value=o)
+			occupied = False
+			occupiedString = "unoccupied"
+
+		combinedState = "%s/%s" % (temperature, occupiedString)
+
+		self.dev.updateStateOnServer(key=u"temperature", value=temperature)
+		self.dev.updateStateOnServer(key=u"occupied", value=occupied)
+		self.dev.updateStateOnServer(key=u"combinedState", value=combinedState)
 
 
 class EcobeeThermostat:
@@ -73,9 +83,9 @@ class Plugin(indigo.PluginBase):
 		indigo.server.log(u"constructed config: %s" % json.dumps(tmpconfig))
 
 		# Create an ecobee object with the config dictionary
-		indigo.server.log(u"initializing ecobee module")
+#		indigo.server.log(u"initializing ecobee module")
 		self.ecobee = Ecobee(config = tmpconfig)
-		indigo.server.log(u"ecobee module initialized")
+#		indigo.server.log(u"ecobee module initialized")
 
 		self.pluginPrefs["pin"] = self.ecobee.pin
 		self.pluginPrefs["authorizationCode"] = self.ecobee.authorization_code
@@ -86,13 +96,18 @@ class Plugin(indigo.PluginBase):
 
 	def startup(self):
 		indigo.server.log(u"startup called")
-		self.ecobee.update()
+#		self.ecobee.update()
 
 	def shutdown(self):
 		indigo.server.log(u"shutdown called")
 
 	def request_pin(self, valuesDict = None):
 		indigo.server.log(u"requesting pin")
+
+		valuesDict[ACCESS_TOKEN_PLUGIN_PREF] = ''
+		valuesDict[AUTHORIZATION_CODE_PLUGIN_PREF] = ''
+		valuesDict[REFRESH_TOKEN_PLUGIN_PREF] = ''
+
 		self.ecobee.request_pin()
 		indigo.server.log(u"received pin: %s" % self.ecobee.pin)
 		valuesDict['pin'] = self.ecobee.pin
@@ -138,13 +153,18 @@ class Plugin(indigo.PluginBase):
 #		indigo.server.log(u"device added; plugin props: %s" % dev.pluginProps)
 #		indigo.server.log(u"device added: %s" % dev)
 
+	def _objectForDevice(self, dev):
+		if dev.model == 'Ecobee Remote Sensor':
+			matches = [rs for rs in active_remote_sensors if rs.address == dev.address]
+			return matches[0]
+
 	def runConcurrentThread(self):
 		try:
 			while True:
-#				for ers in self.active_remote_sensors:
-#					ers.updateServer()
-				for dev in indigo.devices.iter("self"):
-					indigo.server.log('dev: %s' % dev)
+				for ers in self.active_remote_sensors:
+					ers.updateServer()
+#				for dev in indigo.devices.iter("self"):
+#					indigo.server.log('dev: %s' % dev)
 #					if not dev.enabled:
 #						continue
 #					if dev.model == 'Ecobee Remote Sensor':
@@ -155,6 +175,7 @@ class Plugin(indigo.PluginBase):
 					# self._refreshStatesFromHardware(dev, False, False)
 
 				self.sleep(15)
-				self.ecobee.update()
+				if self.ecobee.authenticated:
+					self.ecobee.update()
 		except self.StopThread:
 			pass	# Optionally catch the StopThread exception and do any needed cleanup.

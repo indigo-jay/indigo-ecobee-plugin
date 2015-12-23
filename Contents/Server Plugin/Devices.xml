@@ -133,7 +133,12 @@
 				<TriggerLabel>Occupied</TriggerLabel>
 				<ControlPageLabel>Occupied</ControlPageLabel>
 			</State>
+			<State id="combinedState" readonly="true">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Combined State</TriggerLabel>
+				<ControlPageLabel>Combined State</ControlPageLabel>
+			</State>
 		</States>
-		<UiDisplayStateId>temperature</UiDisplayStateId>
+		<UiDisplayStateId>combinedState</UiDisplayStateId>
 	</Device>
 </Devices>
