@@ -122,15 +122,18 @@
 				<List class="self" method="get_remote_sensors"/>
 			</Field>
 		</ConfigUI>
-		<State id="temperature" readonly="true">
-			<ValueType>Float</ValueType>
-			<TriggerLabel>Temperature</TriggerLabel>
-			<ControlPageLabel>Temperature</ControlPageLabel>
-		</State>
-		<State id="occupied" readonly="true">
-			<ValueType boolType="YesNo">Boolean</ValueType>
-			<TriggerLabel>Occupied</TriggerLabel>
-			<ControlPageLabel>Occupied</ControlPageLabel>
-		</State>
+		<States>
+			<State id="temperature" readonly="true">
+				<ValueType>Float</ValueType>
+				<TriggerLabel>Temperature</TriggerLabel>
+				<ControlPageLabel>Temperature</ControlPageLabel>
+			</State>
+			<State id="occupied" readonly="true">
+				<ValueType boolType="YesNo">Boolean</ValueType>
+				<TriggerLabel>Occupied</TriggerLabel>
+				<ControlPageLabel>Occupied</ControlPageLabel>
+			</State>
+		</States>
+		<UiDisplayStateId>temperature</UiDisplayStateId>
 	</Device>
 </Devices>
