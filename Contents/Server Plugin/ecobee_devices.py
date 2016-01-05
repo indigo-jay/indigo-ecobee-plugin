@@ -1,4 +1,3 @@
-from pyecobee import Ecobee
 import sys
 import json
 import indigo
@@ -11,10 +10,10 @@ def _get_capability(obj, cname):
 class EcobeeBase:
 	temperatureFormatter = temperature_scale.Fahrenheit()
 
-	def __init__(self, address, dev, ecobee):
+	def __init__(self, address, dev, pyecobee):
 		self.address = address
 		self.dev = dev
-		self.ecobee = ecobee
+		self.pyecobee = pyecobee
 		matchedSensor = self.updateServer()
 		self.name = matchedSensor.get('name')
 
@@ -30,10 +29,10 @@ class EcobeeBase:
 		if not self.dev.configured:
 			indigo.server.log('device %s not fully configured yet; not updating state' % self.address)
 			return False
-		if not self.ecobee.authenticated:
-			indigo.server.log('not authenticated to ecobee yet; not initializing state of device %s' % self.address)
+		if not self.pyecobee.authenticated:
+			indigo.server.log('not authenticated to pyecobee yet; not initializing state of device %s' % self.address)
 			return False
-		if None == self.ecobee.get_thermostats():
+		if None == self.pyecobee.get_thermostats():
 			indigo.server.log('no thermostats found; authenticated?')
 			return False
 
@@ -59,15 +58,15 @@ class EcobeeBase:
 
 
 class EcobeeThermostat(EcobeeBase):
-	def __init__(self, address, dev, ecobee):
-		EcobeeBase.__init__(self, address, dev, ecobee)
+	def __init__(self, address, dev, pyecobee):
+		EcobeeBase.__init__(self, address, dev, pyecobee)
 
 	def updateServer(self):
 #		indigo.server.log("updating thermostat from server")
 		if not self.updatable():
 			return
 
-		matchedSensor = [rs for rs in self.ecobee.get_remote_sensors(0) if 'thermostat' == rs.get('type')][0]
+		matchedSensor = [rs for rs in self.pyecobee.get_remote_sensors(0) if 'thermostat' == rs.get('type')][0]
 
 		temperature = self._update_server_temperature(matchedSensor, u'temperatureInput1')
 		occupiedString = self._update_server_occupancy(matchedSensor)
@@ -88,13 +87,13 @@ class EcobeeThermostat(EcobeeBase):
 
 
 class EcobeeRemoteSensor(EcobeeBase):
-	def __init__(self, address, dev, ecobee):
-		EcobeeBase.__init__(self, address, dev, ecobee)
+	def __init__(self, address, dev, pyecobee):
+		EcobeeBase.__init__(self, address, dev, pyecobee)
 
 	def _matching_sensor(self):
 		# should be exactly one; if not, then ... panic
 #		indigo.server.log('finding matching sensor for %s' % self.address)
-		return [rs for rs in self.ecobee.get_remote_sensors(0) if self.address == rs.get('code')][0]
+		return [rs for rs in self.pyecobee.get_remote_sensors(0) if self.address == rs.get('code')][0]
 
 	def updateServer(self):
 #		indigo.server.log("updating remote sensor from server")

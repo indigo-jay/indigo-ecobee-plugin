@@ -1,4 +1,4 @@
-from pyecobee import Ecobee
+import pyecobee
 import sys
 import json
 import indigo
@@ -54,7 +54,7 @@ class Plugin(indigo.PluginBase):
 
 		# Create an ecobee object with the config dictionary
 #		indigo.server.log(u"initializing ecobee module")
-		self.ecobee = Ecobee(config = tmpconfig)
+		self.ecobee = pyecobee.Ecobee(config = tmpconfig)
 #		indigo.server.log(u"ecobee module initialized")
 		self.pluginPrefs["pin"] = self.ecobee.pin
 		if self.ecobee.authenticated:
