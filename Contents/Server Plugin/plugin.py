@@ -142,12 +142,10 @@ class Plugin(indigo.PluginBase):
 				)
 
 	def _filter_for_orphans(self, tuples, actives):
-		def claimed(address):
-			return len (
-				[ a for a in actives if a.address == address ]
-			) > 0
-
-		return [ t for t in tuples if not claimed(t[0]) ]
+		return [
+			t for t in tuples
+				if not [ a for a in actives if a.address == t[0] ]
+		]
 
 
 	def _get_keys_from_ecobee(self, valuesDict):
