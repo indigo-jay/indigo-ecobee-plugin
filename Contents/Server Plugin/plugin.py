@@ -130,15 +130,24 @@ class Plugin(indigo.PluginBase):
 		]
 
 	def get_orphan_remote_sensors(self, filter="", valuesDict=None, typeId="", targetId=0):
+		return self._filter_for_orphans(
+					self.get_remote_sensors(filter, valuesDict, typeId, targetId),
+					self.active_remote_sensors
+				)
+
+	def get_orphan_thermostats(self, filter="", valuesDict=None, typeId="", targetId=0):
+		return self._filter_for_orphans(
+					self.get_thermostats(filter, valuesDict, typeId, targetId),
+					self.active_thermostats
+				)
+
+	def _filter_for_orphans(self, tuples, actives):
 		def claimed(address):
-			return len ([
-				crs for crs in self.active_remote_sensors
-					if crs.address == address
-			]) > 0
-		return [
-			rs for rs in self.get_remote_sensors(filter, valuesDict, typeId, targetId)
-				if not claimed(rs[0])
-		]
+			return len (
+				[ a for a in actives if a.address == address ]
+			) > 0
+
+		return [ t for t in tuples if not claimed(t[0]) ]
 
 
 	def _get_keys_from_ecobee(self, valuesDict):
