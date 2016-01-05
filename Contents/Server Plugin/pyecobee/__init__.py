@@ -2,6 +2,9 @@
 import requests
 import json
 import os
+import time
+
+RESPONSE_CACHE_TIME_SECONDS = 180
 
 
 def config_from_file(filename, config=None):
@@ -34,6 +37,7 @@ class Ecobee(object):
         self.thermostats = list()
         self.pin = None
         self.authenticated = False
+        self.lastRefreshTime = 0
 
         if config is None:
             self.file_based_config = True
@@ -115,6 +119,13 @@ class Ecobee(object):
             self.request_pin()
 
     def get_thermostats(self):
+        seconds_remaining = RESPONSE_CACHE_TIME_SECONDS - time.time() + self.lastRefreshTime
+        if self.thermostats and (seconds_remaining > 0):
+#            print("returning cached thermostat information; %.0f seconds until cache expiration" % seconds_remaining)
+            return self.thermostats
+
+#        print("getting thermostats via ecobee API")
+
         ''' Set self.thermostats to a json list of thermostats from ecobee '''
         url = 'https://api.ecobee.com/1/thermostat'
         header = {'Content-Type': 'application/json;charset=UTF-8',
@@ -127,6 +138,7 @@ class Ecobee(object):
         if request.status_code == requests.codes.ok:
             self.authenticated = True
             self.thermostats = request.json()['thermostatList']
+            self.lastRefreshTime = time.time()
             return self.thermostats
         else:
             self.authenticated = False
