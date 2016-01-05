@@ -129,6 +129,17 @@ class Plugin(indigo.PluginBase):
 				if 'ecobee3_remote_sensor' == rs.get('type')
 		]
 
+	def get_orphan_remote_sensors(self, filter="", valuesDict=None, typeId="", targetId=0):
+		def claimed(address):
+			return len ([
+				crs for crs in self.active_remote_sensors
+					if crs.address == address
+			]) > 0
+		return [
+			rs for rs in self.get_remote_sensors(filter, valuesDict, typeId, targetId)
+				if not claimed(rs[0])
+		]
+
 
 	def _get_keys_from_ecobee(self, valuesDict):
 		valuesDict[ACCESS_TOKEN_PLUGIN_PREF] = self.ecobee.access_token

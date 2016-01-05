@@ -113,7 +113,7 @@
 		<Name>Ecobee Remote Sensor</Name>
 		<ConfigUI>
 			<Field id="address" type="menu">
-				<List class="self" method="get_remote_sensors"/>
+				<List class="self" method="get_orphan_remote_sensors"/>
 			</Field>
 		</ConfigUI>
 		<States>
