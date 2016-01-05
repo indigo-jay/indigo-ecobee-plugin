@@ -3,6 +3,19 @@ import json
 import indigo
 import temperature_scale
 
+HVAC_MODE_MAP = {
+	'heat'        : indigo.kHvacMode.Heat,
+	'cool'        : indigo.kHvacMode.Cool,
+	'auto'        : indigo.kHvacMode.HeatCool,
+	'auxHeatOnly' : indigo.kHvacMode.Heat, # TODO: is this right?
+	'off'         : indigo.kHvacMode.Off
+}
+
+FAN_MODE_MAP = {
+	'auto': indigo.kFanMode.Auto,
+	'on'  : indigo.kFanMode.AlwaysOn
+}
+
 def _get_capability(obj, cname):
 	ret = [c for c in obj.get('capability') if cname == c.get('type')][0]
 	return ret
@@ -66,13 +79,17 @@ class EcobeeThermostat(EcobeeBase):
 		#indigo.server.log('getting non-sensor thermostat data')
 		thermostat = self.pyecobee.get_thermostat(0)
 		#indigo.server.log('getting thermostat runtime object')
-		r = thermostat.get('runtime')
+		runtime = thermostat.get('runtime')
 		#indigo.server.log('getting heat setpoint')
-		hsp = r.get('desiredHeat')
+		hsp = runtime.get('desiredHeat')
 		#indigo.server.log('getting cool setpoint')
-		csp = r.get('desiredCool')
+		csp = runtime.get('desiredCool')
 
-		indigo.server.log('setpoints:   heat: %s, cool %s' % (hsp, csp))
+		settings = thermostat.get('settings')
+		hvacMode = settings.get('hvacMode')
+		fanMode = runtime.get('desiredFanMode')
+
+		indigo.server.log('heat setpoint: %s, cool setpoint: %s, hvac mode: %s, fan mode: %s' % (hsp, csp, hvacMode, fanMode))
 
 		matchedSensor = [rs for rs in self.pyecobee.get_remote_sensors(0) if 'thermostat' == rs.get('type')][0]
 
@@ -85,9 +102,11 @@ class EcobeeThermostat(EcobeeBase):
 		self.dev.updateStateOnServer(key="humidityInput1", value=humidity)
 
 		# other states we need to update:
-		# setpointHeat, setpointCool, hvacOperationMode, hvacFanMode, hvacCoolerIsOn, hvacHeaterIsOn, hvacFanIsOn
+		# hvacFanMode, hvacCoolerIsOn, hvacHeaterIsOn, hvacFanIsOn
 		self.dev.updateStateOnServer(key="setpointHeat", value=EcobeeBase.temperatureFormatter.format(hsp))
 		self.dev.updateStateOnServer(key="setpointCool", value=EcobeeBase.temperatureFormatter.format(csp))
+		self.dev.updateStateOnServer(key="hvacOperationMode", value=HVAC_MODE_MAP[hvacMode])
+		self.dev.updateStateOnServer(key="hvacFanMode", value=FAN_MODE_MAP[fanMode])
 
 		combinedState = "%s/%s/%s" % (temperature, humidity, occupiedString)
 		self.dev.updateStateOnServer(key=u"combinedState", value=combinedState)
