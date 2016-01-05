@@ -14,6 +14,7 @@ class EcobeeBase:
 		self.address = address
 		self.dev = dev
 		self.pyecobee = pyecobee
+		self.name = address # temporary name until we get the real one from the server
 		matchedSensor = self.updateServer()
 		self.name = matchedSensor.get('name')
 
@@ -80,7 +81,7 @@ class EcobeeThermostat(EcobeeBase):
 		combinedState = "%s/%s/%s" % (temperature, humidity, occupiedString)
 		self.dev.updateStateOnServer(key=u"combinedState", value=combinedState)
 
-		indigo.server.log('thermostat %s updated: %s' % (self.address, combinedState))
+		indigo.server.log("thermostat '%s' (%s) updated: %s" % (self.name, self.address, combinedState))
 
 		return matchedSensor
 
@@ -108,6 +109,6 @@ class EcobeeRemoteSensor(EcobeeBase):
 		combinedState = "%s/%s" % (temperature, occupiedString)
 		self.dev.updateStateOnServer(key=u"combinedState", value=combinedState)
 
-		indigo.server.log('remote sensor %s updated: %s' % (self.address, combinedState))
+		indigo.server.log("remote sensor '%s' (%s) updated: %s" % (self.name, self.address, combinedState))
 
 		return matchedSensor
