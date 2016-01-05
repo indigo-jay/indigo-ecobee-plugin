@@ -2,12 +2,15 @@ from pyecobee import Ecobee
 import sys
 import json
 import indigo
+import temperature_scale
 
 def _get_capability(obj, cname):
 	ret = [c for c in obj.get('capability') if cname == c.get('type')][0]
 	return ret
 
 class EcobeeBase:
+	temperatureFormatter = temperature_scale.Fahrenheit()
+
 	def __init__(self, address, dev, ecobee):
 		self.address = address
 		self.dev = dev
@@ -38,7 +41,7 @@ class EcobeeBase:
 
 	def _update_server_temperature(self, matchedSensor, stateKey):
 		tempCapability = _get_capability(matchedSensor, 'temperature') # [c for c in matchedSensor.get('capability') if 'temperature' == c.get('type')][0]
-		temperature = float(tempCapability.get('value')) / 10;
+		temperature = EcobeeBase.temperatureFormatter.format(tempCapability.get('value'));
 		self.dev.updateStateOnServer(key=stateKey, value=temperature)
 		return temperature
 

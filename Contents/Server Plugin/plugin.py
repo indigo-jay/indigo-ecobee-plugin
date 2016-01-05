@@ -2,13 +2,22 @@ from pyecobee import Ecobee
 import sys
 import json
 import indigo
-from ecobee_devices import EcobeeThermostat, EcobeeRemoteSensor
+from ecobee_devices import EcobeeBase, EcobeeThermostat, EcobeeRemoteSensor
+import temperature_scale
 
 
 DEBUG=False
 ACCESS_TOKEN_PLUGIN_PREF='accessToken'
 AUTHORIZATION_CODE_PLUGIN_PREF='authorizationCode'
 REFRESH_TOKEN_PLUGIN_PREF='refreshToken'
+TEMPERATURE_SCALE_PLUGIN_PREF='temperatureScale'
+
+TEMP_FORMATTERS = {
+	'F': temperature_scale.Fahrenheit(),
+	'C': temperature_scale.Celsius(),
+	'K': temperature_scale.Kelvin(),
+	'R': temperature_scale.Rankine()
+}
 
 class IndigoLogger:
 	def write(self, text):
@@ -26,6 +35,14 @@ class Plugin(indigo.PluginBase):
 		# redirect stdout to Indigo log
 		sys.stdout = IndigoLogger()
 
+#		indigo.server.log(u'plugin prefs: %s' % pluginPrefs)
+
+
+		if TEMPERATURE_SCALE_PLUGIN_PREF in pluginPrefs:
+			self._setTemperatureScale(pluginPrefs[TEMPERATURE_SCALE_PLUGIN_PREF][0])
+		else:
+			self._setTemperatureScale('F')
+
 		tmpconfig = {'API_KEY': "qyy0od74EpMz2P8X1fmAfyoxKod4t1Fo"}
 		if ACCESS_TOKEN_PLUGIN_PREF in pluginPrefs:
 			tmpconfig['ACCESS_TOKEN'] = pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF]
@@ -33,7 +50,7 @@ class Plugin(indigo.PluginBase):
 			tmpconfig['AUTHORIZATION_CODE'] = pluginPrefs[AUTHORIZATION_CODE_PLUGIN_PREF]
 		if REFRESH_TOKEN_PLUGIN_PREF in pluginPrefs:
 			tmpconfig['REFRESH_TOKEN'] = pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF]
-		indigo.server.log(u"constructed config: %s" % json.dumps(tmpconfig))
+		indigo.server.log(u"constructed pyecobee config: %s" % json.dumps(tmpconfig))
 
 		# Create an ecobee object with the config dictionary
 #		indigo.server.log(u"initializing ecobee module")
@@ -53,6 +70,15 @@ class Plugin(indigo.PluginBase):
 
 	def __del__(self):
 		indigo.PluginBase.__del__(self)
+
+	def validatePrefsConfigUi(self, valuesDict):
+		scaleInfo = valuesDict[TEMPERATURE_SCALE_PLUGIN_PREF]
+		self._setTemperatureScale(scaleInfo[0])
+		return True
+
+	def _setTemperatureScale(self, value):
+		indigo.server.log(u'setting temperature scale to %s' % value)
+		EcobeeBase.temperatureFormatter = TEMP_FORMATTERS.get(value)
 
 	def startup(self):
 		indigo.server.log(u"startup called")

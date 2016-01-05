@@ -2,6 +2,18 @@
 <PluginConfig>
 	<SupportURL>http://www.yourdomain.com/plugin/config.html</SupportURL>
 
+	<Field id ="temperatureScale" type="menu">
+		<Label>Temperature scale:</Label>
+		<List>
+			<Option value="F">Fahrenheit</Option>
+			<Option value="C">Celsius</Option>
+			<Option value="K">Kelvin</Option>
+			<Option value="R">Rankine</Option>
+		</List>
+	</Field>
+
+	<Field id="separator1" type="separator"/>
+
   <Field id="getPin" type="button">
     <Label>1. Click to obtain an Ecobee PIN:</Label>
     <Title>Get PIN</Title>
@@ -20,7 +32,9 @@
     <Title>Refresh</Title>
     <CallbackMethod>refresh_credentials</CallbackMethod>
   </Field>
-	<Field id="separator1" type="separator"/>
+
+	<Field id="separator2" type="separator"/>
+
 	<Field id="accessToken" type="textfield" readonly="true">
 		<Label>Access Token:</Label>
 	</Field>
