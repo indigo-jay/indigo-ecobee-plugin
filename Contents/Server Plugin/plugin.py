@@ -39,9 +39,16 @@ class Plugin(indigo.PluginBase):
 #		indigo.server.log(u"initializing ecobee module")
 		self.ecobee = Ecobee(config = tmpconfig)
 #		indigo.server.log(u"ecobee module initialized")
-
 		self.pluginPrefs["pin"] = self.ecobee.pin
-		self.pluginPrefs["authorizationCode"] = self.ecobee.authorization_code
+		if self.ecobee.authenticated:
+			self.pluginPrefs
+			self.pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF] = self.ecobee.access_token
+			self.pluginPrefs[AUTHORIZATION_CODE_PLUGIN_PREF] = self.ecobee.authorization_code
+			self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF] = self.ecobee.refresh_token
+		else:
+			self.pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF] = ''
+			self.pluginPrefs[AUTHORIZATION_CODE_PLUGIN_PREF] = ''
+			self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF] = ''
 
 
 	def __del__(self):
@@ -107,7 +114,8 @@ class Plugin(indigo.PluginBase):
 #		indigo.server.log('deviceStartComm: %s' % dev)
 		if dev.model == 'Ecobee Remote Sensor':
 #			indigo.server.log("deviceStartComm: creating EcobeeRemoteSensor")
-			self.active_remote_sensors.append(EcobeeRemoteSensor(dev.pluginProps["address"], dev, self.ecobee))
+			newDevice = EcobeeRemoteSensor(dev.pluginProps["address"], dev, self.ecobee)
+			self.active_remote_sensors.append(newDevice)
 			indigo.server.log("added remote sensor %s" % dev.pluginProps["address"])
 
 		elif dev.model == 'Ecobee Thermostat':
@@ -115,8 +123,18 @@ class Plugin(indigo.PluginBase):
 			newProps = dev.pluginProps
 			newProps["NumHumidityInputs"] = 1
 			dev.replacePluginPropsOnServer(newProps)
-			self.active_thermostats.append(EcobeeThermostat(dev.pluginProps["address"], dev, self.ecobee))
+			newDevice = EcobeeThermostat(dev.pluginProps["address"], dev, self.ecobee)
+			self.active_thermostats.append(newDevice)
 			indigo.server.log("added thermostat %s" % dev.pluginProps["address"])
+
+		indigo.server.log('device name: %s  ecobee name: %s' % (dev.name, newDevice.name))
+
+		# TODO: try to set initial name for new devices, as other plugins do.
+		# However, this doesn't work yet. Sad clown.
+		if dev.name == 'new device' and newDevice.name:
+			dev.name = newDevice.name
+			dev.replaceOnServer()
+			indigo.server.log('device name set to %s' % dev.name)
 
 #		indigo.server.log(u"device added; plugin props: %s" % dev.pluginProps)
 #		indigo.server.log(u"device added: %s" % dev)

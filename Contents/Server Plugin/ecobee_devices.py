@@ -12,14 +12,23 @@ class EcobeeBase:
 		self.address = address
 		self.dev = dev
 		self.ecobee = ecobee
-		self.updateServer()
+		matchedSensor = self.updateServer()
+		self.name = matchedSensor.get('name')
+
+#		indigo.server.log(u"ecobee object initialized; matched sensor info: %s" % matchedSensor)
+#		indigo.server.log(u"ecobee object %s initialized; indigo's name is %s, ecobee's name is %s" % (self.address, dev.name, self.name))
+
+#		if matchedSensor:
+#			self.name = matchedSensor.name
+#		else:
+#			self.name = ''
 
 	def updatable(self):
 		if not self.dev.configured:
 			indigo.server.log('device %s not fully configured yet; not updating state' % self.address)
 			return False
 		if not self.ecobee.authenticated:
-			indigo.server.log('not authenticated to ecobee yet; not initilizing state of device %s' % self.address)
+			indigo.server.log('not authenticated to ecobee yet; not initializing state of device %s' % self.address)
 			return False
 		if None == self.ecobee.get_thermostats():
 			indigo.server.log('no thermostats found; authenticated?')
@@ -71,6 +80,8 @@ class EcobeeThermostat(EcobeeBase):
 
 		indigo.server.log('thermostat %s updated: %s' % (self.address, combinedState))
 
+		return matchedSensor
+
 
 
 class EcobeeRemoteSensor(EcobeeBase):
@@ -96,3 +107,5 @@ class EcobeeRemoteSensor(EcobeeBase):
 		self.dev.updateStateOnServer(key=u"combinedState", value=combinedState)
 
 		indigo.server.log('remote sensor %s updated: %s' % (self.address, combinedState))
+
+		return matchedSensor
