@@ -18,14 +18,6 @@ class EcobeeBase:
 		matchedSensor = self.updateServer()
 		self.name = matchedSensor.get('name')
 
-#		indigo.server.log(u"ecobee object initialized; matched sensor info: %s" % matchedSensor)
-#		indigo.server.log(u"ecobee object %s initialized; indigo's name is %s, ecobee's name is %s" % (self.address, dev.name, self.name))
-
-#		if matchedSensor:
-#			self.name = matchedSensor.name
-#		else:
-#			self.name = ''
-
 	def updatable(self):
 		if not self.dev.configured:
 			indigo.server.log('device %s not fully configured yet; not updating state' % self.address)
@@ -33,9 +25,13 @@ class EcobeeBase:
 		if not self.pyecobee.authenticated:
 			indigo.server.log('not authenticated to pyecobee yet; not initializing state of device %s' % self.address)
 			return False
-		if None == self.pyecobee.get_thermostats():
+		ts = self.pyecobee.get_thermostats()
+		if None == ts:
 			indigo.server.log('no thermostats found; authenticated?')
 			return False
+#		else:
+#			indigo.server.log('thermostat data:')
+#			indigo.server.log(json.dumps(ts, sort_keys=True, indent=4, separators=(',', ': ')))
 
 		return True
 
@@ -67,6 +63,17 @@ class EcobeeThermostat(EcobeeBase):
 		if not self.updatable():
 			return
 
+		#indigo.server.log('getting non-sensor thermostat data')
+		thermostat = self.pyecobee.get_thermostat(0)
+		#indigo.server.log('getting thermostat runtime object')
+		r = thermostat.get('runtime')
+		#indigo.server.log('getting heat setpoint')
+		hsp = r.get('desiredHeat')
+		#indigo.server.log('getting cool setpoint')
+		csp = r.get('desiredCool')
+
+		indigo.server.log('setpoints:   heat: %s, cool %s' % (hsp, csp))
+
 		matchedSensor = [rs for rs in self.pyecobee.get_remote_sensors(0) if 'thermostat' == rs.get('type')][0]
 
 		temperature = self._update_server_temperature(matchedSensor, u'temperatureInput1')
@@ -77,6 +84,10 @@ class EcobeeThermostat(EcobeeBase):
 		humidity = float(humidityCapability.get('value'));
 		self.dev.updateStateOnServer(key="humidityInput1", value=humidity)
 
+		# other states we need to update:
+		# setpointHeat, setpointCool, hvacOperationMode, hvacFanMode, hvacCoolerIsOn, hvacHeaterIsOn, hvacFanIsOn
+		self.dev.updateStateOnServer(key="setpointHeat", value=EcobeeBase.temperatureFormatter.format(hsp))
+		self.dev.updateStateOnServer(key="setpointCool", value=EcobeeBase.temperatureFormatter.format(csp))
 
 		combinedState = "%s/%s/%s" % (temperature, humidity, occupiedString)
 		self.dev.updateStateOnServer(key=u"combinedState", value=combinedState)
