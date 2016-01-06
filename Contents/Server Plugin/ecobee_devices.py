@@ -2,6 +2,7 @@ import sys
 import json
 import indigo
 import temperature_scale
+import logging
 
 HVAC_MODE_MAP = {
 	'heat'        : indigo.kHvacMode.Heat,
@@ -24,6 +25,7 @@ class EcobeeBase:
 	temperatureFormatter = temperature_scale.Fahrenheit()
 
 	def __init__(self, address, dev, pyecobee):
+		self.log = logging.getLogger('indigo.ecobee.plugin')
 		self.address = address
 		self.dev = dev
 		self.pyecobee = pyecobee
@@ -33,14 +35,14 @@ class EcobeeBase:
 
 	def updatable(self):
 		if not self.dev.configured:
-			indigo.server.log('device %s not fully configured yet; not updating state' % self.address)
+			self.log.warning('device %s not fully configured yet; not updating state' % self.address)
 			return False
 		if not self.pyecobee.authenticated:
-			indigo.server.log('not authenticated to pyecobee yet; not initializing state of device %s' % self.address)
+			self.log.warning('not authenticated to pyecobee yet; not initializing state of device %s' % self.address)
 			return False
 		ts = self.pyecobee.get_thermostats()
 		if None == ts:
-			indigo.server.log('no thermostats found; authenticated?')
+			self.log.warning('no thermostats found; authenticated?')
 			return False
 #		else:
 #			indigo.server.log('thermostat data:')
@@ -72,24 +74,20 @@ class EcobeeThermostat(EcobeeBase):
 		EcobeeBase.__init__(self, address, dev, pyecobee)
 
 	def updateServer(self):
-#		indigo.server.log("updating thermostat from server")
+		self.log.debug("updating thermostat from server")
 		if not self.updatable():
 			return
 
-		#indigo.server.log('getting non-sensor thermostat data')
 		thermostat = self.pyecobee.get_thermostat(0)
-		#indigo.server.log('getting thermostat runtime object')
 		runtime = thermostat.get('runtime')
-		#indigo.server.log('getting heat setpoint')
 		hsp = runtime.get('desiredHeat')
-		#indigo.server.log('getting cool setpoint')
 		csp = runtime.get('desiredCool')
 
 		settings = thermostat.get('settings')
 		hvacMode = settings.get('hvacMode')
 		fanMode = runtime.get('desiredFanMode')
 
-		indigo.server.log('heat setpoint: %s, cool setpoint: %s, hvac mode: %s, fan mode: %s' % (hsp, csp, hvacMode, fanMode))
+		self.log.info('heat setpoint: %s, cool setpoint: %s, hvac mode: %s, fan mode: %s' % (hsp, csp, hvacMode, fanMode))
 
 		matchedSensor = [rs for rs in self.pyecobee.get_remote_sensors(0) if 'thermostat' == rs.get('type')][0]
 
@@ -102,7 +100,7 @@ class EcobeeThermostat(EcobeeBase):
 		self.dev.updateStateOnServer(key="humidityInput1", value=humidity)
 
 		# other states we need to update:
-		# hvacFanMode, hvacCoolerIsOn, hvacHeaterIsOn, hvacFanIsOn
+		# hvacCoolerIsOn, hvacHeaterIsOn, hvacFanIsOn
 		self.dev.updateStateOnServer(key="setpointHeat", value=EcobeeBase.temperatureFormatter.format(hsp))
 		self.dev.updateStateOnServer(key="setpointCool", value=EcobeeBase.temperatureFormatter.format(csp))
 		self.dev.updateStateOnServer(key="hvacOperationMode", value=HVAC_MODE_MAP[hvacMode])
@@ -111,7 +109,7 @@ class EcobeeThermostat(EcobeeBase):
 		combinedState = "%s/%s/%s" % (temperature, humidity, occupiedString)
 		self.dev.updateStateOnServer(key=u"combinedState", value=combinedState)
 
-		indigo.server.log("thermostat '%s' (%s) updated: %s" % (self.name, self.address, combinedState))
+		self.log.info("thermostat '%s' (%s) updated: %s" % (self.name, self.address, combinedState))
 
 		return matchedSensor
 
@@ -123,11 +121,10 @@ class EcobeeRemoteSensor(EcobeeBase):
 
 	def _matching_sensor(self):
 		# should be exactly one; if not, then ... panic
-#		indigo.server.log('finding matching sensor for %s' % self.address)
+		self.log.debug('finding matching sensor for %s' % self.address)
 		return [rs for rs in self.pyecobee.get_remote_sensors(0) if self.address == rs.get('code')][0]
 
 	def updateServer(self):
-#		indigo.server.log("updating remote sensor from server")
 		if not self.updatable():
 			return
 
@@ -139,6 +136,6 @@ class EcobeeRemoteSensor(EcobeeBase):
 		combinedState = "%s/%s" % (temperature, occupiedString)
 		self.dev.updateStateOnServer(key=u"combinedState", value=combinedState)
 
-		indigo.server.log("remote sensor '%s' (%s) updated: %s" % (self.name, self.address, combinedState))
+		self.log.info("remote sensor '%s' (%s) updated: %s" % (self.name, self.address, combinedState))
 
 		return matchedSensor

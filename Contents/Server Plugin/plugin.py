@@ -4,9 +4,10 @@ import json
 import indigo
 from ecobee_devices import EcobeeBase, EcobeeThermostat, EcobeeRemoteSensor
 import temperature_scale
+import logging
 
 
-DEBUG=True
+DEBUG=False
 ACCESS_TOKEN_PLUGIN_PREF='accessToken'
 AUTHORIZATION_CODE_PLUGIN_PREF='authorizationCode'
 REFRESH_TOKEN_PLUGIN_PREF='refreshToken'
@@ -19,9 +20,19 @@ TEMP_FORMATTERS = {
 	'R': temperature_scale.Rankine()
 }
 
-class IndigoLogger:
-	def write(self, text):
-		indigo.server.log(text)
+class IndigoLoggingHandler(logging.Handler):
+	def __init__(self, p):
+		 logging.Handler.__init__(self)
+		 self.plugin = p
+
+	def emit(self, record):
+#		indigo.server.log('log record is %s' % record)
+		if record.levelno < 20:
+			self.plugin.debugLog(record.getMessage())
+		elif record.levelno < 40:
+			indigo.server.log(record.getMessage())
+		else:
+			self.plugin.errorLog(record.getMessage())
 
 class Plugin(indigo.PluginBase):
 
@@ -32,11 +43,10 @@ class Plugin(indigo.PluginBase):
 		self.active_remote_sensors = []
 		self.active_thermostats = []
 
-		# redirect stdout to Indigo log
-		sys.stdout = IndigoLogger()
-
-#		indigo.server.log(u'plugin prefs: %s' % pluginPrefs)
-
+		logHandler = IndigoLoggingHandler(self)
+		logging.getLogger('pyecobee').addHandler(logHandler)
+		self.log = logging.getLogger('indigo.ecobee.plugin')
+		self.log.addHandler(logHandler)
 
 		if TEMPERATURE_SCALE_PLUGIN_PREF in pluginPrefs:
 			self._setTemperatureScale(pluginPrefs[TEMPERATURE_SCALE_PLUGIN_PREF][0])
@@ -50,7 +60,7 @@ class Plugin(indigo.PluginBase):
 			tmpconfig['AUTHORIZATION_CODE'] = pluginPrefs[AUTHORIZATION_CODE_PLUGIN_PREF]
 		if REFRESH_TOKEN_PLUGIN_PREF in pluginPrefs:
 			tmpconfig['REFRESH_TOKEN'] = pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF]
-		indigo.server.log(u"constructed pyecobee config: %s" % json.dumps(tmpconfig))
+		self.debugLog(u"constructed pyecobee config: %s" % json.dumps(tmpconfig))
 
 		# Create an ecobee object with the config dictionary
 		self.ecobee = pyecobee.Ecobee(config = tmpconfig)
@@ -76,7 +86,7 @@ class Plugin(indigo.PluginBase):
 		return True
 
 	def _setTemperatureScale(self, value):
-		self.debugLog(u'setting temperature scale to %s' % value)
+		self.log.debug(u'setting temperature scale to %s' % value)
 		EcobeeBase.temperatureFormatter = TEMP_FORMATTERS.get(value)
 
 	def startup(self):
@@ -151,9 +161,9 @@ class Plugin(indigo.PluginBase):
 		return valuesDict
 
 	def deviceStartComm(self, dev):
-#		indigo.server.log('deviceStartComm: %s' % dev)
+#		self.debugLog('deviceStartComm: %s' % dev)
 		if dev.model == 'Ecobee Remote Sensor':
-#			indigo.server.log("deviceStartComm: creating EcobeeRemoteSensor")
+			self.debugLog("deviceStartComm: creating EcobeeRemoteSensor")
 			newDevice = EcobeeRemoteSensor(dev.pluginProps["address"], dev, self.ecobee)
 			self.active_remote_sensors.append(newDevice)
 			indigo.server.log("added remote sensor %s" % dev.pluginProps["address"])
@@ -169,11 +179,11 @@ class Plugin(indigo.PluginBase):
 
 		# TODO: try to set initial name for new devices, as other plugins do.
 		# However, this doesn't work yet. Sad clown.
-#		indigo.server.log('device name: %s  ecobee name: %s' % (dev.name, newDevice.name))
+		self.debugLog('device name: %s  ecobee name: %s' % (dev.name, newDevice.name))
 		if dev.name == 'new device' and newDevice.name:
 			dev.name = newDevice.name
 			dev.replaceOnServer()
-#			indigo.server.log('device name set to %s' % dev.name)
+			self.debugLog('device name set to %s' % dev.name)
 
 #		indigo.server.log(u"device added; plugin props: %s" % dev.pluginProps)
 #		indigo.server.log(u"device added: %s" % dev)
