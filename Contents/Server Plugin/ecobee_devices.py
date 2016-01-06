@@ -31,14 +31,13 @@ class EcobeeBase:
 		self.pyecobee = pyecobee
 		self.name = address # temporary name until we get the real one from the server
 		matchedSensor = self.updateServer()
-		self.name = matchedSensor.get('name')
 
 	def updatable(self):
 		if not self.dev.configured:
-			self.log.warning('device %s not fully configured yet; not updating state' % self.address)
+			self.log.debug('device %s not fully configured yet; not updating state' % self.address)
 			return False
 		if not self.pyecobee.authenticated:
-			self.log.warning('not authenticated to pyecobee yet; not initializing state of device %s' % self.address)
+			self.log.info('not authenticated to pyecobee yet; not initializing state of device %s' % self.address)
 			return False
 		ts = self.pyecobee.get_thermostats()
 		if None == ts:
@@ -94,6 +93,8 @@ class EcobeeThermostat(EcobeeBase):
 
 		matchedSensor = [rs for rs in self.pyecobee.get_remote_sensors(0) if 'thermostat' == rs.get('type')][0]
 
+		self.name = matchedSensor.get('name')
+
 		temperature = self._update_server_temperature(matchedSensor, u'temperatureInput1')
 		occupiedString = self._update_server_occupancy(matchedSensor)
 
@@ -137,6 +138,8 @@ class EcobeeRemoteSensor(EcobeeBase):
 			return
 
 		matchedSensor = self._matching_sensor()
+
+		self.name = matchedSensor.get('name')
 
 		temperature = self._update_server_temperature(matchedSensor, u'temperature')
 		occupiedString = self._update_server_occupancy(matchedSensor)
