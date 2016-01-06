@@ -73,6 +73,9 @@ class Ecobee(object):
 
         self.update()
 
+    def _invalidate_cache(self):
+        self.lastRefreshTime = 0
+
     def request_pin(self):
         ''' Method to request a PIN from ecobee for authorization '''
         url = 'https://api.ecobee.com/authorize'
@@ -169,6 +172,7 @@ class Ecobee(object):
                 '"}}}')
         request = requests.post(url, headers=header, params=params, data=body)
         if request.status_code == requests.codes.ok:
+            self._invalidate_cache()
             return request
         else:
             print("Error connecting to Ecobee while attempting to set"
@@ -189,6 +193,7 @@ class Ecobee(object):
                 ':"' + self.thermostats[index]['identifier'] + '"}}')
         request = requests.post(url, headers=header, params=params, data=body)
         if request.status_code == requests.codes.ok:
+            self._invalidate_cache()
             return request
         else:
             print("Error connecting to Ecobee while attempting to set"
@@ -207,6 +212,7 @@ class Ecobee(object):
                 ':"' + self.thermostats[index]['identifier'] + '"}}')
         request = requests.post(url, headers=header, params=params, data=body)
         if request.status_code == requests.codes.ok:
+            self._invalidate_cache()
             return request
         else:
             print("Error connecting to Ecobee while attempting to set"
@@ -225,6 +231,7 @@ class Ecobee(object):
                 + self.thermostats[index]['identifier'] + '"}}')
         request = requests.post(url, headers=header, params=params, data=body)
         if request.status_code == requests.codes.ok:
+            self._invalidate_cache()
             return request
         else:
             print("Error connecting to Ecobee while attempting to resume"
