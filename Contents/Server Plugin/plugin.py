@@ -82,7 +82,6 @@ class Plugin(indigo.PluginBase):
 
 	def startup(self):
 		indigo.server.log(u"startup called")
-#		self.ecobee.update()
 
 	def shutdown(self):
 		indigo.server.log(u"shutdown called")
@@ -105,8 +104,6 @@ class Plugin(indigo.PluginBase):
 	def refresh_credentials(self, valuesDict = None):
 		self.ecobee.request_tokens()
 		self._get_keys_from_ecobee(valuesDict)
-		#self.ecobee.update()
-		#indigo.server.log(json.dumps(self.ecobee.thermostats))
 		return valuesDict
 
 	def get_thermostats(self, filter="", valuesDict=None, typeId="", targetId=0):
@@ -171,22 +168,28 @@ class Plugin(indigo.PluginBase):
 			self.active_thermostats.append(newDevice)
 			indigo.server.log("added thermostat %s" % dev.pluginProps["address"])
 
-		indigo.server.log('device name: %s  ecobee name: %s' % (dev.name, newDevice.name))
-
 		# TODO: try to set initial name for new devices, as other plugins do.
 		# However, this doesn't work yet. Sad clown.
+#		indigo.server.log('device name: %s  ecobee name: %s' % (dev.name, newDevice.name))
 		if dev.name == 'new device' and newDevice.name:
 			dev.name = newDevice.name
 			dev.replaceOnServer()
-			indigo.server.log('device name set to %s' % dev.name)
+#			indigo.server.log('device name set to %s' % dev.name)
 
 #		indigo.server.log(u"device added; plugin props: %s" % dev.pluginProps)
 #		indigo.server.log(u"device added: %s" % dev)
 
-	def _objectForDevice(self, dev):
+	def deviceStopComm(self, dev):
 		if dev.model == 'Ecobee Remote Sensor':
-			matches = [rs for rs in active_remote_sensors if rs.address == dev.address]
-			return matches[0]
+			self.active_remote_sensors = [
+				rs for rs in self.active_remote_sensors
+					if rs.address != dev.pluginProps["address"]
+			]
+		elif dev.model == 'Ecobee Thermostat':
+			self.active_thermostats = [
+				t for t in self.active_thermostats
+					if t.address != dev.pluginProps["address"]
+			]
 
 	def runConcurrentThread(self):
 		try:
@@ -195,12 +198,6 @@ class Plugin(indigo.PluginBase):
 					ers.updateServer()
 				for t in self.active_thermostats:
 					t.updateServer()
-#				for dev in indigo.devices.iter("self"):
-#					indigo.server.log('dev: %s' % dev)
-#					if not dev.enabled:
-#						continue
-#					if dev.model == 'Ecobee Remote Sensor':
-#						indigo.server.log("concurrent thread found active remote sensor %s" % dev.address)
 					# Plugins that need to poll out the status from the thermostat
 					# could do so here, then broadcast back the new values to the
 					# Indigo Server.
