@@ -6,7 +6,7 @@ from ecobee_devices import EcobeeBase, EcobeeThermostat, EcobeeRemoteSensor
 import temperature_scale
 
 
-DEBUG=False
+DEBUG=True
 ACCESS_TOKEN_PLUGIN_PREF='accessToken'
 AUTHORIZATION_CODE_PLUGIN_PREF='authorizationCode'
 REFRESH_TOKEN_PLUGIN_PREF='refreshToken'
@@ -53,9 +53,8 @@ class Plugin(indigo.PluginBase):
 		indigo.server.log(u"constructed pyecobee config: %s" % json.dumps(tmpconfig))
 
 		# Create an ecobee object with the config dictionary
-#		indigo.server.log(u"initializing ecobee module")
 		self.ecobee = pyecobee.Ecobee(config = tmpconfig)
-#		indigo.server.log(u"ecobee module initialized")
+
 		self.pluginPrefs["pin"] = self.ecobee.pin
 		if self.ecobee.authenticated:
 			self.pluginPrefs
@@ -77,14 +76,14 @@ class Plugin(indigo.PluginBase):
 		return True
 
 	def _setTemperatureScale(self, value):
-		indigo.server.log(u'setting temperature scale to %s' % value)
+		self.debugLog(u'setting temperature scale to %s' % value)
 		EcobeeBase.temperatureFormatter = TEMP_FORMATTERS.get(value)
 
 	def startup(self):
-		indigo.server.log(u"startup called")
+		self.debugLog(u"startup called")
 
 	def shutdown(self):
-		indigo.server.log(u"shutdown called")
+		self.debugLog(u"shutdown called")
 
 	def request_pin(self, valuesDict = None):
 		indigo.server.log(u"requesting pin")
@@ -94,7 +93,7 @@ class Plugin(indigo.PluginBase):
 		valuesDict[REFRESH_TOKEN_PLUGIN_PREF] = ''
 
 		self.ecobee.request_pin()
-		indigo.server.log(u"received pin: %s" % self.ecobee.pin)
+		self.debugLog(u"received pin: %s" % self.ecobee.pin)
 		valuesDict['pin'] = self.ecobee.pin
 		return valuesDict
 
