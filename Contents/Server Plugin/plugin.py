@@ -43,9 +43,18 @@ class Plugin(indigo.PluginBase):
 		self.active_thermostats = []
 
 		logHandler = IndigoLoggingHandler(self)
-		logging.getLogger('pyecobee').addHandler(logHandler)
+
+		pyecobeeLogger = logging.getLogger('pyecobee')
+		pyecobeeLogger.addHandler(logHandler)
 		self.log = logging.getLogger('indigo.ecobee.plugin')
 		self.log.addHandler(logHandler)
+
+		if DEBUG:
+			pyecobeeLogger.setLevel(logging.DEBUG)
+			self.log.setLevel(logging.DEBUG)
+		else:
+			pyecobeeLogger.setLevel(logging.ERROR)
+			self.log.setLevel(logging.WARNING)
 
 		if TEMPERATURE_SCALE_PLUGIN_PREF in pluginPrefs:
 			self._setTemperatureScale(pluginPrefs[TEMPERATURE_SCALE_PLUGIN_PREF][0])
@@ -74,6 +83,7 @@ class Plugin(indigo.PluginBase):
 			self.pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF] = ''
 			self.pluginPrefs[AUTHORIZATION_CODE_PLUGIN_PREF] = ''
 			self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF] = ''
+			self.errorLog('Ecobee device requires authentication; open plugin configuration page for info')
 
 
 	def __del__(self):
@@ -112,6 +122,8 @@ class Plugin(indigo.PluginBase):
 	def refresh_credentials(self, valuesDict = None):
 		self.ecobee.request_tokens()
 		self._get_keys_from_ecobee(valuesDict)
+		if self.ecobee.authenticated:
+			self.updateAllDevices()
 		return valuesDict
 
 	def get_thermostats(self, filter="", valuesDict=None, typeId="", targetId=0):
@@ -203,17 +215,20 @@ class Plugin(indigo.PluginBase):
 					if t.address != dev.pluginProps["address"]
 			]
 
+	def updateAllDevices(self):
+		for ers in self.active_remote_sensors:
+			ers.updateServer()
+		for t in self.active_thermostats:
+			t.updateServer()
+
 	def runConcurrentThread(self):
 		try:
 			while True:
-				for ers in self.active_remote_sensors:
-					ers.updateServer()
-				for t in self.active_thermostats:
-					t.updateServer()
 					# Plugins that need to poll out the status from the thermostat
 					# could do so here, then broadcast back the new values to the
 					# Indigo Server.
 					# self._refreshStatesFromHardware(dev, False, False)
+				self.updateAllDevices()
 
 				self.sleep(15)
 				if self.ecobee.authenticated:
