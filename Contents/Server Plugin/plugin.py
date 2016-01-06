@@ -26,7 +26,6 @@ class IndigoLoggingHandler(logging.Handler):
 		 self.plugin = p
 
 	def emit(self, record):
-#		indigo.server.log('log record is %s' % record)
 		if record.levelno < 20:
 			self.plugin.debugLog(record.getMessage())
 		elif record.levelno < 40:
@@ -172,6 +171,10 @@ class Plugin(indigo.PluginBase):
 			# Add support for the thermostat's humidity sensor
 			newProps = dev.pluginProps
 			newProps["NumHumidityInputs"] = 1
+			# SHENANIGANS: the following property has to be set in order for us to report
+			#   whether the thermostat is presently heating, cooling, etc.
+			#   This was difficult to find.
+			newProps["ShowCoolHeatEquipmentStateUI"] = True
 			dev.replacePluginPropsOnServer(newProps)
 			newDevice = EcobeeThermostat(dev.pluginProps["address"], dev, self.ecobee)
 			self.active_thermostats.append(newDevice)

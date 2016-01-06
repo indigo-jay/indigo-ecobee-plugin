@@ -82,12 +82,15 @@ class EcobeeThermostat(EcobeeBase):
 		runtime = thermostat.get('runtime')
 		hsp = runtime.get('desiredHeat')
 		csp = runtime.get('desiredCool')
+		climate = thermostat.get('program').get('currentClimateRef')
 
 		settings = thermostat.get('settings')
 		hvacMode = settings.get('hvacMode')
 		fanMode = runtime.get('desiredFanMode')
 
-		self.log.info('heat setpoint: %s, cool setpoint: %s, hvac mode: %s, fan mode: %s' % (hsp, csp, hvacMode, fanMode))
+		status = thermostat.get('equipmentStatus')
+
+		self.log.info('heat setpoint: %s, cool setpoint: %s, hvac mode: %s, fan mode: %s, climate: %s, status %s' % (hsp, csp, hvacMode, fanMode, climate, status))
 
 		matchedSensor = [rs for rs in self.pyecobee.get_remote_sensors(0) if 'thermostat' == rs.get('type')][0]
 
@@ -99,12 +102,17 @@ class EcobeeThermostat(EcobeeBase):
 		humidity = float(humidityCapability.get('value'));
 		self.dev.updateStateOnServer(key="humidityInput1", value=humidity)
 
-		# other states we need to update:
-		# hvacCoolerIsOn, hvacHeaterIsOn, hvacFanIsOn
+#		self.log.error('thermostat dev: %s' % self.dev)
+
 		self.dev.updateStateOnServer(key="setpointHeat", value=EcobeeBase.temperatureFormatter.format(hsp))
 		self.dev.updateStateOnServer(key="setpointCool", value=EcobeeBase.temperatureFormatter.format(csp))
 		self.dev.updateStateOnServer(key="hvacOperationMode", value=HVAC_MODE_MAP[hvacMode])
 		self.dev.updateStateOnServer(key="hvacFanMode", value=FAN_MODE_MAP[fanMode])
+		self.dev.updateStateOnServer(key="climate", value=climate)
+
+		self.dev.updateStateOnServer(key="hvacHeaterIsOn", value=bool(status and ('heatPump' in status or 'auxHeat' in status)))
+		self.dev.updateStateOnServer(key="hvacCoolerIsOn", value=bool(status and ('compCool' in status)))
+		self.dev.updateStateOnServer(key="hvacFanIsOn", value=bool(status and ('fan' in status or 'ventilator' in status)))
 
 		combinedState = "%s/%s/%s" % (temperature, humidity, occupiedString)
 		self.dev.updateStateOnServer(key=u"combinedState", value=combinedState)

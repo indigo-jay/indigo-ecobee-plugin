@@ -90,10 +90,10 @@
 			is used to control the brightness of the backlit display of
 			the thermostat.
 			-->
-			<State id="away">
-				<ValueType>Boolean</ValueType>
-				<TriggerLabel>Away</TriggerLabel>
-				<ControlPageLabel>Away</ControlPageLabel>
+			<State id="climate">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Climate</TriggerLabel>
+				<ControlPageLabel>Climate</ControlPageLabel>
 			</State>
 			<State id="occupied" readonly="true">
 				<ValueType boolType="YesNo">Boolean</ValueType>
