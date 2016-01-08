@@ -177,6 +177,10 @@ class Plugin(indigo.PluginBase):
 			self.debugLog("deviceStartComm: creating EcobeeRemoteSensor")
 			newDevice = EcobeeRemoteSensor(dev.pluginProps["address"], dev, self.ecobee)
 			self.active_remote_sensors.append(newDevice)
+			
+			# set icon to 'temperature sensor'
+			dev.updateStateImageOnServer(indigo.kStateImageSel.TemperatureSensor)
+
 			indigo.server.log("added remote sensor %s" % dev.pluginProps["address"])
 
 		elif dev.model == 'Ecobee Thermostat':
