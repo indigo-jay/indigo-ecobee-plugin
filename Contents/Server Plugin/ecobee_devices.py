@@ -59,15 +59,9 @@ class EcobeeBase:
 
 	def _update_server_occupancy(self, matchedSensor):
 		occupancyCapability = [c for c in matchedSensor.get('capability') if 'occupancy' == c.get('type')][0]
-		if 'true' == occupancyCapability.get('value'):
-			occupied = True
-			occupiedString = "occupied"
-		else:
-			occupied = False
-			occupiedString = "unoccupied"
-
+		occupied = ( 'true' == occupancyCapability.get('value') )
 		self.dev.updateStateOnServer(key=u"occupied", value=occupied)
-		return occupiedString
+		return occupied
 
 
 class EcobeeThermostat(EcobeeBase):
@@ -97,15 +91,12 @@ class EcobeeThermostat(EcobeeBase):
 
 		self.name = matchedSensor.get('name')
 
-		temperature = self._update_server_temperature(matchedSensor, u'temperatureInput1')
-		occupiedString = self._update_server_occupancy(matchedSensor)
+		self._update_server_temperature(matchedSensor, u'temperatureInput1')
+		self._update_server_occupancy(matchedSensor)
 
 		# humidity
 		humidityCapability = _get_capability(matchedSensor, 'humidity')
-		humidity = float(humidityCapability.get('value'));
-		self.dev.updateStateOnServer(key="humidityInput1", value=humidity)
-
-#		self.log.error('thermostat dev: %s' % self.dev)
+		self.dev.updateStateOnServer(key="humidityInput1", value=float(humidityCapability.get('value')))
 
 		EcobeeBase.temperatureFormatter.report(self.dev, "setpointHeat", hsp)
 		EcobeeBase.temperatureFormatter.report(self.dev, "setpointCool", csp)
@@ -116,11 +107,6 @@ class EcobeeThermostat(EcobeeBase):
 		self.dev.updateStateOnServer(key="hvacHeaterIsOn", value=bool(status and ('heatPump' in status or 'auxHeat' in status)))
 		self.dev.updateStateOnServer(key="hvacCoolerIsOn", value=bool(status and ('compCool' in status)))
 		self.dev.updateStateOnServer(key="hvacFanIsOn", value=bool(status and ('fan' in status or 'ventilator' in status)))
-
-		combinedState = "%s/%s/%s" % (temperature, humidity, occupiedString)
-		self.dev.updateStateOnServer(key=u"combinedState", value=combinedState)
-
-		self.log.info("thermostat '%s' (%s) updated: %s" % (self.name, self.address, combinedState))
 
 		return matchedSensor
 
@@ -143,12 +129,14 @@ class EcobeeRemoteSensor(EcobeeBase):
 
 		self.name = matchedSensor.get('name')
 
-		temperature = self._update_server_temperature(matchedSensor, u'temperature')
-		occupiedString = self._update_server_occupancy(matchedSensor)
+		self._update_server_temperature(matchedSensor, u'temperature')
 
-		combinedState = "%s/%s" % (temperature, occupiedString)
-		self.dev.updateStateOnServer(key=u"combinedState", value=combinedState)
+		# if occupancy was detected, set the icon to show a 'tripped' motion sensor;
+		# otherwise, just show the thermometer for the temperature sensor
+		if self._update_server_occupancy(matchedSensor):
+			self.dev.updateStateImageOnServer(indigo.kStateImageSel.MotionSensorTripped)
+		else:
+			self.dev.updateStateImageOnServer(indigo.kStateImageSel.TemperatureSensor)
 
-		self.log.info("remote sensor '%s' (%s) updated: %s" % (self.name, self.address, combinedState))
 
 		return matchedSensor
