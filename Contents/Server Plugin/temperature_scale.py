@@ -1,21 +1,36 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+
 FORMAT_STRING = "{0:.1f}"
 
-def _format(f):
-	return float(FORMAT_STRING.format(f))
-
-class Fahrenheit:
+class TemperatureScale:
+	def report(self, dev, stateKey, reading):
+		txt = self.format(reading)
+		dev.updateStateOnServer(key=stateKey, value=self.convert(reading), decimalPlaces=1, uiValue=txt)
+		return txt
 	def format(self, reading):
-		return _format(float(reading) / 10)
+		return u"%s%s" % (FORMAT_STRING.format(self.convert(reading)), self.suffix())
 
-class Celsius:
-	def format(self, reading):
-		# 5/9*((F/10)-32)
-		return _format(((float(reading) / 10) - 32) * 5 / 9)
+class Fahrenheit(TemperatureScale):
+	def convert(self, reading):
+		return float(reading) / 10
+	def suffix(self):
+		return u"°F"
 
-class Kelvin:
-	def format(self, reading):
-		return _format((((float(reading) / 10) - 32) * 5 / 9) + 273.15)
+class Celsius(TemperatureScale):
+	def convert(self, reading):
+		return ((float(reading) / 10) - 32) * 5 / 9
+	def suffix(self):
+		return u"°C"
 
-class Rankine:
-	def format(self, reading):
-		return _format((float(reading) / 10) + 459.67)
+class Kelvin(TemperatureScale):
+	def convert(self, reading):
+		return (((float(reading) / 10) - 32) * 5 / 9) + 273.15
+	def suffix(self):
+		return u"K"
+
+class Rankine(TemperatureScale):
+	def convert(self, reading):
+		return (float(reading) / 10) + 459.67
+	def suffix(self):
+		return u"°Ra"

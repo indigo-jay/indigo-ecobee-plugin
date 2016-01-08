@@ -1,3 +1,6 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import sys
 import json
 import indigo
@@ -50,9 +53,8 @@ class EcobeeBase:
 		return True
 
 	def _update_server_temperature(self, matchedSensor, stateKey):
-		tempCapability = _get_capability(matchedSensor, 'temperature') # [c for c in matchedSensor.get('capability') if 'temperature' == c.get('type')][0]
-		temperature = EcobeeBase.temperatureFormatter.format(tempCapability.get('value'));
-		self.dev.updateStateOnServer(key=stateKey, value=temperature)
+		tempCapability = _get_capability(matchedSensor, 'temperature')
+		return EcobeeBase.temperatureFormatter.report(self.dev, stateKey, tempCapability.get('value'))
 		return temperature
 
 	def _update_server_occupancy(self, matchedSensor):
@@ -105,8 +107,8 @@ class EcobeeThermostat(EcobeeBase):
 
 #		self.log.error('thermostat dev: %s' % self.dev)
 
-		self.dev.updateStateOnServer(key="setpointHeat", value=EcobeeBase.temperatureFormatter.format(hsp))
-		self.dev.updateStateOnServer(key="setpointCool", value=EcobeeBase.temperatureFormatter.format(csp))
+		EcobeeBase.temperatureFormatter.report(self.dev, "setpointHeat", hsp)
+		EcobeeBase.temperatureFormatter.report(self.dev, "setpointCool", csp)
 		self.dev.updateStateOnServer(key="hvacOperationMode", value=HVAC_MODE_MAP[hvacMode])
 		self.dev.updateStateOnServer(key="hvacFanMode", value=FAN_MODE_MAP[fanMode])
 		self.dev.updateStateOnServer(key="climate", value=climate)
