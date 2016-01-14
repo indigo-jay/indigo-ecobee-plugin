@@ -129,7 +129,11 @@ class EcobeeRemoteSensor(EcobeeBase):
 
 		self.name = matchedSensor.get('name')
 
-		self._update_server_temperature(matchedSensor, u'temperature')
+		try:
+			self._update_server_temperature(matchedSensor, u'temperature')
+		except ValueError:
+			self.log.error("%s: couldn't format temperature value; is the sensor alive?" % self.name)
+
 
 		# if occupancy was detected, set the icon to show a 'tripped' motion sensor;
 		# otherwise, just show the thermometer for the temperature sensor
