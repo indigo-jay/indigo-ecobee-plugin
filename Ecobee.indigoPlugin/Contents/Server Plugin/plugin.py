@@ -8,6 +8,7 @@ import indigo
 from ecobee_devices import EcobeeBase, EcobeeThermostat, EcobeeRemoteSensor
 import temperature_scale
 import logging
+from indigo_logging_handler import IndigoLoggingHandler
 
 
 DEBUG=False
@@ -23,18 +24,6 @@ TEMP_FORMATTERS = {
 	'R': temperature_scale.Rankine()
 }
 
-class IndigoLoggingHandler(logging.Handler):
-	def __init__(self, p):
-		 logging.Handler.__init__(self)
-		 self.plugin = p
-
-	def emit(self, record):
-		if record.levelno < 20:
-			self.plugin.debugLog(record.getMessage())
-		elif record.levelno < 40:
-			indigo.server.log(record.getMessage())
-		else:
-			self.plugin.errorLog(record.getMessage())
 
 class Plugin(indigo.PluginBase):
 
