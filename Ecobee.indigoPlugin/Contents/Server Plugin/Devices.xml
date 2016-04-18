@@ -31,7 +31,7 @@
 		<Name>Ecobee Thermostat</Name>
 		<ConfigUI>
 			<Field id="address" type="menu">
-				<List class="self" method="get_orphan_thermostats"/>
+				<List class="self" method="get_thermostats"/>
 			</Field>
 			<!-- The ConfigUI here is just an example of the type of device
 			specific UI that might be needed. Here you might specify a text
@@ -107,7 +107,7 @@
 		<Name>Ecobee Remote Sensor</Name>
 		<ConfigUI>
 			<Field id="address" type="menu">
-				<List class="self" method="get_orphan_remote_sensors"/>
+				<List class="self" method="get_remote_sensors"/>
 			</Field>
 		</ConfigUI>
 		<States>
