@@ -102,6 +102,10 @@ class EcobeeBase:
 		return EcobeeBase.temperatureFormatter.report(self.dev, stateKey, tempCapability.get('value'))
 		return temperature
 
+	def _update_server_smart_temperature(self, ActualTemp, stateKey):
+		return EcobeeBase.temperatureFormatter.report(self.dev, stateKey, ActualTemp)
+		return temperature
+
 	def _update_server_occupancy(self, matchedSensor):
 		occupancyCapability = [c for c in matchedSensor.get('capability') if 'occupancy' == c.get('type')][0]
 		occupied = ( 'true' == occupancyCapability.get('value') )
@@ -159,6 +163,52 @@ class EcobeeThermostat(EcobeeBase):
 
 		return matchedSensor
 
+class EcobeeSmartThermostat(EcobeeBase):
+	def __init__(self, address, dev, pyecobee):
+		self.address = address
+		self.dev = dev
+		self.pyecobee = pyecobee
+		self.name = address # temporary name until we get the real one from the server
+
+	def updateServer(self):
+		log.debug("updating smart thermostat from server")
+		if not self.updatable():
+			return
+
+		thermostat = _get_thermostat_json(self.pyecobee, self.address)
+		runtime = thermostat.get('runtime')
+		hsp = runtime.get('desiredHeat')
+		csp = runtime.get('desiredCool')
+		temp = runtime.get('actualTemperature')
+		hum = runtime.get('actualHumidity')
+		climate = thermostat.get('program').get('currentClimateRef')
+
+		settings = thermostat.get('settings')
+		hvacMode = settings.get('hvacMode')
+		fanMode = runtime.get('desiredFanMode')
+
+		status = thermostat.get('equipmentStatus')
+
+		log.info('heat setpoint: %s, cool setpoint: %s, hvac mode: %s, fan mode: %s, climate: %s, status %s' % (hsp, csp, hvacMode, fanMode, climate, status))
+
+		self.name = thermostat.get('name')
+
+		self._update_server_smart_temperature(temp, u'temperatureInput1')
+
+		# humidity
+		self.dev.updateStateOnServer(key="humidityInput1", value=float(hum))
+
+		EcobeeBase.temperatureFormatter.report(self.dev, "setpointHeat", hsp)
+		EcobeeBase.temperatureFormatter.report(self.dev, "setpointCool", csp)
+		self.dev.updateStateOnServer(key="hvacOperationMode", value=HVAC_MODE_MAP[hvacMode])
+		self.dev.updateStateOnServer(key="hvacFanMode", value=FAN_MODE_MAP[fanMode])
+		self.dev.updateStateOnServer(key="climate", value=climate)
+
+		self.dev.updateStateOnServer(key="hvacHeaterIsOn", value=bool(status and ('heatPump' in status or 'auxHeat' in status)))
+		self.dev.updateStateOnServer(key="hvacCoolerIsOn", value=bool(status and ('compCool' in status)))
+		self.dev.updateStateOnServer(key="hvacFanIsOn", value=bool(status and ('fan' in status or 'ventilator' in status)))
+
+		return self
 
 
 class EcobeeRemoteSensor(EcobeeBase):

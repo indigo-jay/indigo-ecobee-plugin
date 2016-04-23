@@ -33,6 +33,7 @@ class Plugin(indigo.PluginBase):
 
 		self.active_remote_sensors = []
 		self.active_thermostats = []
+		self.active_smart_thermostats = []
 
 		logHandler = IndigoLoggingHandler(self)
 
@@ -171,6 +172,19 @@ class Plugin(indigo.PluginBase):
 			self.active_thermostats.append(newDevice)
 			indigo.server.log("added thermostat %s" % dev.pluginProps["address"])
 
+		elif dev.model == 'Ecobee Smart Thermostat':
+			# Add support for the thermostat's humidity sensor
+			newProps = dev.pluginProps
+			newProps["NumHumidityInputs"] = 1
+			# SHENANIGANS: the following property has to be set in order for us to report
+			#   whether the thermostat is presently heating, cooling, etc.
+			#   This was difficult to find.
+			newProps["ShowCoolHeatEquipmentStateUI"] = True
+			dev.replacePluginPropsOnServer(newProps)
+			newDevice = EcobeeSmartThermostat(dev.pluginProps["address"], dev, self.ecobee)
+			self.active_smart_thermostats.append(newDevice)
+			indigo.server.log("added smart thermostat %s" % dev.pluginProps["address"])
+
 		# TODO: try to set initial name for new devices, as other plugins do.
 		# However, this doesn't work yet. Sad clown.
 		self.debugLog('device name: %s  ecobee name: %s' % (dev.name, newDevice.name))
@@ -193,12 +207,19 @@ class Plugin(indigo.PluginBase):
 				t for t in self.active_thermostats
 					if t.address != dev.pluginProps["address"]
 			]
+		elif dev.model == 'Ecobee Smart Thermostat':
+			self.active_smart_thermostats = [
+				st for st in self.active_smart_thermostats
+					if st.address != dev.pluginProps["address"]
+			]
 
 	def updateAllDevices(self):
 		for ers in self.active_remote_sensors:
 			ers.updateServer()
 		for t in self.active_thermostats:
 			t.updateServer()
+		for st in self.active_smart_thermostats:
+			st.updateServer()
 
 	def runConcurrentThread(self):
 		try:
