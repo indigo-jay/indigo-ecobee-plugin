@@ -222,6 +222,162 @@ class Plugin(indigo.PluginBase):
 		for st in self.active_smart_thermostats:
 			st.updateServer()
 
+	########################################
+	# Thermostat Action callback
+	######################
+	# Main thermostat action bottleneck called by Indigo Server.
+	def actionControlThermostat(self, action, dev):
+	
+		# indigo.server.log(u"info passed: self: %s ; action: %s ; dev: %s" % (self, action, dev))
+		###### SET HVAC MODE ######
+		if action.thermostatAction == indigo.kThermostatAction.SetHvacMode:
+			self._handleChangeHvacModeAction(dev, action.actionMode)
+
+		###### SET FAN MODE ######
+		# elif action.thermostatAction == indigo.kThermostatAction.SetFanMode:
+			# self._handleChangeFanModeAction(dev, action.actionMode)
+
+		###### SET COOL SETPOINT ######
+		# elif action.thermostatAction == indigo.kThermostatAction.SetCoolSetpoint:
+			# newSetpoint = action.actionValue
+			# self._handleChangeSetpointAction(dev, newSetpoint, u"change cool setpoint", u"setpointCool")
+
+		###### SET HEAT SETPOINT ######
+		# elif action.thermostatAction == indigo.kThermostatAction.SetHeatSetpoint:
+			# newSetpoint = action.actionValue
+			# self._handleChangeSetpointAction(dev, newSetpoint, u"change heat setpoint", u"setpointHeat")
+
+		###### DECREASE/INCREASE COOL SETPOINT ######
+		# elif action.thermostatAction == indigo.kThermostatAction.DecreaseCoolSetpoint:
+			# newSetpoint = dev.coolSetpoint - action.actionValue
+			# self._handleChangeSetpointAction(dev, newSetpoint, u"decrease cool setpoint", u"setpointCool")
+
+		# elif action.thermostatAction == indigo.kThermostatAction.IncreaseCoolSetpoint:
+			# newSetpoint = dev.coolSetpoint + action.actionValue
+			# self._handleChangeSetpointAction(dev, newSetpoint, u"increase cool setpoint", u"setpointCool")
+
+		###### DECREASE/INCREASE HEAT SETPOINT ######
+		# elif action.thermostatAction == indigo.kThermostatAction.DecreaseHeatSetpoint:
+			# newSetpoint = dev.heatSetpoint - action.actionValue
+			# self._handleChangeSetpointAction(dev, newSetpoint, u"decrease heat setpoint", u"setpointHeat")
+
+		# elif action.thermostatAction == indigo.kThermostatAction.IncreaseHeatSetpoint:
+			# newSetpoint = dev.heatSetpoint + action.actionValue
+			# self._handleChangeSetpointAction(dev, newSetpoint, u"increase heat setpoint", u"setpointHeat")
+
+		###### REQUEST STATE UPDATES ######
+		# elif action.thermostatAction in [indigo.kThermostatAction.RequestStatusAll, indigo.kThermostatAction.RequestMode,
+		# indigo.kThermostatAction.RequestEquipmentState, indigo.kThermostatAction.RequestTemperatures, indigo.kThermostatAction.RequestHumidities,
+		# indigo.kThermostatAction.RequestDeadbands, indigo.kThermostatAction.RequestSetpoints]:
+		#	self._refreshStatesFromHardware(dev, True, False)
+
+	########################################
+	# General Action callback
+	######################
+	def actionControlGeneral(self, action, dev):
+		###### BEEP ######
+		if action.deviceAction == indigo.kDeviceGeneralAction.Beep:
+			# Beep the hardware module (dev) here:
+			# ** IMPLEMENT ME **
+			indigo.server.log(u"sent \"%s\" %s" % (dev.name, "beep request"))
+
+		###### ENERGY UPDATE ######
+		elif action.deviceAction == indigo.kDeviceGeneralAction.EnergyUpdate:
+			# Request hardware module (dev) for its most recent meter data here:
+			# ** IMPLEMENT ME **
+			indigo.server.log(u"sent \"%s\" %s" % (dev.name, "energy update request"))
+
+		###### ENERGY RESET ######
+		elif action.deviceAction == indigo.kDeviceGeneralAction.EnergyReset:
+			# Request that the hardware module (dev) reset its accumulative energy usage data here:
+			# ** IMPLEMENT ME **
+			indigo.server.log(u"sent \"%s\" %s" % (dev.name, "energy reset request"))
+
+		###### STATUS REQUEST ######
+		elif action.deviceAction == indigo.kDeviceGeneralAction.RequestStatus:
+			# Query hardware module (dev) for its current status here. This differs from the 
+			# indigo.kThermostatAction.RequestStatusAll action - for instance, if your thermo
+			# is battery powered you might only want to update it only when the user uses
+			# this status request (and not from the RequestStatusAll). This action would
+			# get all possible information from the thermostat and the other call
+			# would only get thermostat-specific information:
+			# ** GET BATTERY INFO **
+			# and call the common function to update the thermo-specific data
+			self._refreshStatesFromHardware(dev, True, False)
+			indigo.server.log(u"sent \"%s\" %s" % (dev.name, "status request"))
+
+######################
+	# Process action request from Indigo Server to change main thermostat's main mode.
+	def _handleChangeHvacModeAction(self, dev, newHvacMode):
+		# Command hardware module (dev) to change the thermostat mode here:
+		# ** IMPLEMENT ME **
+
+		indigo.server.log(u"mode: %s --> set to: %s" % (newHvacMode, kHvacModeEnumToStrMap.get(newHvacMode)))
+		indigo.server.log(u"address: %s set to: %s" % (int(dev.address), kHvacModeEnumToStrMap.get(newHvacMode)))
+		self.ecobee.set_hvac_mode(dev.address, kHvacModeEnumToStrMap.get(newHvacMode))
+		# sendSuccess = True		# Set to False if it failed.
+
+		# actionStr = _lookupActionStrFromHvacMode(newHvacMode)
+		# if sendSuccess:
+			# If success then log that the command was successfully sent.
+		# 	indigo.server.log(u"sent \"%s\" mode change to %s" % (dev.name, actionStr))
+
+			# And then tell the Indigo Server to update the state.
+		# 	if "hvacOperationMode" in dev.states:
+		# 		dev.updateStateOnServer("hvacOperationMode", newHvacMode)
+		# else:
+			# Else log failure but do NOT update state on Indigo Server.
+		# 	indigo.server.log(u"send \"%s\" mode change to %s failed" % (dev.name, actionStr), isError=True)
+			
+	######################
+	# Process action request from Indigo Server to change thermostat's fan mode.
+	def _handleChangeFanModeAction(self, dev, newFanMode):
+		# Command hardware module (dev) to change the fan mode here:
+		# ** IMPLEMENT ME **
+		sendSuccess = True		# Set to False if it failed.
+
+		actionStr = _lookupActionStrFromFanMode(newFanMode)
+		if sendSuccess:
+			# If success then log that the command was successfully sent.
+			indigo.server.log(u"sent \"%s\" fan mode change to %s" % (dev.name, actionStr))
+
+			# And then tell the Indigo Server to update the state.
+			if "hvacFanMode" in dev.states:
+				dev.updateStateOnServer("hvacFanMode", newFanMode)
+		else:
+			# Else log failure but do NOT update state on Indigo Server.
+			indigo.server.log(u"send \"%s\" fan mode change to %s failed" % (dev.name, actionStr), isError=True)
+
+	######################
+	# Process action request from Indigo Server to change a cool/heat setpoint.
+	def _handleChangeSetpointAction(self, dev, newSetpoint, logActionName, stateKey):
+		if newSetpoint < 40.0:
+			newSetpoint = 40.0		# Arbitrary -- set to whatever hardware minimum setpoint value is.
+		elif newSetpoint > 95.0:
+			newSetpoint = 95.0		# Arbitrary -- set to whatever hardware maximum setpoint value is.
+
+		sendSuccess = False
+
+		if stateKey == u"setpointCool":
+			# Command hardware module (dev) to change the cool setpoint to newSetpoint here:
+			# ** IMPLEMENT ME **
+			sendSuccess = True			# Set to False if it failed.
+		elif stateKey == u"setpointHeat":
+			# Command hardware module (dev) to change the heat setpoint to newSetpoint here:
+			# ** IMPLEMENT ME **
+			sendSuccess = True			# Set to False if it failed.
+
+		if sendSuccess:
+			# If success then log that the command was successfully sent.
+			indigo.server.log(u"sent \"%s\" %s to %.1f°" % (dev.name, logActionName, newSetpoint))
+
+			# And then tell the Indigo Server to update the state.
+			if stateKey in dev.states:
+				dev.updateStateOnServer(stateKey, newSetpoint, uiValue="%.1f °F" % (newSetpoint))
+		else:
+			# Else log failure but do NOT update state on Indigo Server.
+			indigo.server.log(u"send \"%s\" %s to %.1f° failed" % (dev.name, logActionName, newSetpoint), isError=True)
+
 	def runConcurrentThread(self):
 		try:
 			while True:

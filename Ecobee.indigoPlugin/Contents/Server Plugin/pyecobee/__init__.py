@@ -175,14 +175,17 @@ class Ecobee(object):
         ''' Return remote sensors based on index '''
         return self.thermostats[index]['remoteSensors']
 
-    def set_hvac_mode(self, index, hvac_mode):
+    def set_hvac_mode(self, ident, hvac_mode):
+		# I am changing this to require the identifier, since we can get it from indigo
+		# whereas we don't have the index of where a particular thermostat is in
+		# self.thermostats 
         ''' possible hvac modes are auto, auxHeatOnly, cool, heat, off '''
         url = 'https://api.ecobee.com/1/thermostat'
         header = {'Content-Type': 'application/json;charset=UTF-8',
                   'Authorization': 'Bearer ' + self.access_token}
         params = {'format': 'json'}
         body = ('{"selection":{"selectionType":"thermostats","selectionMatch":'
-                '"' + self.thermostats[index]['identifier'] +
+                '"' + ident +
                 '"},"thermostat":{"settings":{"hvacMode":"' + hvac_mode +
                 '"}}}')
         request = requests.post(url, headers=header, params=params, data=body)

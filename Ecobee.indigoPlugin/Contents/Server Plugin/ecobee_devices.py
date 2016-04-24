@@ -12,6 +12,15 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 
 log = logging.getLogger('indigo.ecobee.plugin')
 
+kHvacModeEnumToStrMap = {
+	indigo.kHvacMode.Cool				: u"cool",
+	indigo.kHvacMode.Heat				: u"heat",
+	indigo.kHvacMode.HeatCool			: u"auto",
+	indigo.kHvacMode.Off				: u"off" # I don't think we need these modes,
+	# indigo.kHvacMode.ProgramHeat		: u"program heat",
+	# indigo.kHvacMode.ProgramCool		: u"program cool",
+	# indigo.kHvacMode.ProgramHeatCool	: u"program auto"
+}
 
 HVAC_MODE_MAP = {
 	'heat'        : indigo.kHvacMode.Heat,
@@ -112,7 +121,6 @@ class EcobeeBase:
 		occupied = ( 'true' == occupancyCapability.get('value') )
 		self.dev.updateStateOnServer(key=u"occupied", value=occupied)
 		return occupied
-
 
 class EcobeeThermostat(EcobeeBase):
 	def __init__(self, address, dev, pyecobee):
