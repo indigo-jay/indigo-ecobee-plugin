@@ -10,6 +10,7 @@ import temperature_scale
 import logging
 from indigo_logging_handler import IndigoLoggingHandler
 
+logging.getLogger("requests").setLevel(logging.WARNING)
 
 DEBUG=False
 ACCESS_TOKEN_PLUGIN_PREF='accessToken'

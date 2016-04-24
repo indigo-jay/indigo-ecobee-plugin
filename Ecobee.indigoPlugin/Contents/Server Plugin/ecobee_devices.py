@@ -8,6 +8,7 @@ import temperature_scale
 import logging
 import pyecobee
 
+logging.getLogger("requests").setLevel(logging.WARNING)
 
 log = logging.getLogger('indigo.ecobee.plugin')
 
