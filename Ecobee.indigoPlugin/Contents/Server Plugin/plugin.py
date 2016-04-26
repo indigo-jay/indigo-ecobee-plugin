@@ -238,32 +238,32 @@ class Plugin(indigo.PluginBase):
 			# self._handleChangeFanModeAction(dev, action.actionMode)
 
 		###### SET COOL SETPOINT ######
-		# elif action.thermostatAction == indigo.kThermostatAction.SetCoolSetpoint:
-			# newSetpoint = action.actionValue
-			# self._handleChangeSetpointAction(dev, newSetpoint, u"change cool setpoint", u"setpointCool")
+		elif action.thermostatAction == indigo.kThermostatAction.SetCoolSetpoint:
+			newSetpoint = action.actionValue
+			self._handleChangeSetpointAction(dev, newSetpoint, u"change cool setpoint", u"setpointCool")
 
 		###### SET HEAT SETPOINT ######
-		# elif action.thermostatAction == indigo.kThermostatAction.SetHeatSetpoint:
-			# newSetpoint = action.actionValue
-			# self._handleChangeSetpointAction(dev, newSetpoint, u"change heat setpoint", u"setpointHeat")
+		elif action.thermostatAction == indigo.kThermostatAction.SetHeatSetpoint:
+			newSetpoint = action.actionValue
+			self._handleChangeSetpointAction(dev, newSetpoint, u"change heat setpoint", u"setpointHeat")
 
 		###### DECREASE/INCREASE COOL SETPOINT ######
-		# elif action.thermostatAction == indigo.kThermostatAction.DecreaseCoolSetpoint:
-			# newSetpoint = dev.coolSetpoint - action.actionValue
-			# self._handleChangeSetpointAction(dev, newSetpoint, u"decrease cool setpoint", u"setpointCool")
+		elif action.thermostatAction == indigo.kThermostatAction.DecreaseCoolSetpoint:
+			newSetpoint = dev.coolSetpoint - action.actionValue
+			self._handleChangeSetpointAction(dev, newSetpoint, u"decrease cool setpoint", u"setpointCool")
 
-		# elif action.thermostatAction == indigo.kThermostatAction.IncreaseCoolSetpoint:
-			# newSetpoint = dev.coolSetpoint + action.actionValue
-			# self._handleChangeSetpointAction(dev, newSetpoint, u"increase cool setpoint", u"setpointCool")
+		elif action.thermostatAction == indigo.kThermostatAction.IncreaseCoolSetpoint:
+			newSetpoint = dev.coolSetpoint + action.actionValue
+			self._handleChangeSetpointAction(dev, newSetpoint, u"increase cool setpoint", u"setpointCool")
 
 		###### DECREASE/INCREASE HEAT SETPOINT ######
-		# elif action.thermostatAction == indigo.kThermostatAction.DecreaseHeatSetpoint:
-			# newSetpoint = dev.heatSetpoint - action.actionValue
-			# self._handleChangeSetpointAction(dev, newSetpoint, u"decrease heat setpoint", u"setpointHeat")
+		elif action.thermostatAction == indigo.kThermostatAction.DecreaseHeatSetpoint:
+			newSetpoint = dev.heatSetpoint - action.actionValue
+			self._handleChangeSetpointAction(dev, newSetpoint, u"decrease heat setpoint", u"setpointHeat")
 
-		# elif action.thermostatAction == indigo.kThermostatAction.IncreaseHeatSetpoint:
-			# newSetpoint = dev.heatSetpoint + action.actionValue
-			# self._handleChangeSetpointAction(dev, newSetpoint, u"increase heat setpoint", u"setpointHeat")
+		elif action.thermostatAction == indigo.kThermostatAction.IncreaseHeatSetpoint:
+			newSetpoint = dev.heatSetpoint + action.actionValue
+			self._handleChangeSetpointAction(dev, newSetpoint, u"increase heat setpoint", u"setpointHeat")
 
 		###### REQUEST STATE UPDATES ######
 		# elif action.thermostatAction in [indigo.kThermostatAction.RequestStatusAll, indigo.kThermostatAction.RequestMode,
@@ -314,20 +314,21 @@ class Plugin(indigo.PluginBase):
 
 		indigo.server.log(u"mode: %s --> set to: %s" % (newHvacMode, kHvacModeEnumToStrMap.get(newHvacMode)))
 		indigo.server.log(u"address: %s set to: %s" % (int(dev.address), kHvacModeEnumToStrMap.get(newHvacMode)))
-		self.ecobee.set_hvac_mode(dev.address, kHvacModeEnumToStrMap.get(newHvacMode))
-		# sendSuccess = True		# Set to False if it failed.
+		if self.ecobee.set_hvac_mode(dev.address, kHvacModeEnumToStrMap.get(newHvacMode)):
+			sendSuccess = True		# Set to False if it failed.
+		else:
+			sendSuccess = False
 
-		# actionStr = _lookupActionStrFromHvacMode(newHvacMode)
-		# if sendSuccess:
+		if sendSuccess:
 			# If success then log that the command was successfully sent.
-		# 	indigo.server.log(u"sent \"%s\" mode change to %s" % (dev.name, actionStr))
+			indigo.server.log(u"sent \"%s\" mode change to %s" % (dev.name, actionStr))
 
 			# And then tell the Indigo Server to update the state.
-		# 	if "hvacOperationMode" in dev.states:
-		# 		dev.updateStateOnServer("hvacOperationMode", newHvacMode)
-		# else:
+		 	if "hvacOperationMode" in dev.states:
+		 		dev.updateStateOnServer("hvacOperationMode", newHvacMode)
+		else:
 			# Else log failure but do NOT update state on Indigo Server.
-		# 	indigo.server.log(u"send \"%s\" mode change to %s failed" % (dev.name, actionStr), isError=True)
+		 	indigo.server.log(u"send \"%s\" mode change to %s failed" % (dev.name, actionStr), isError=True)
 			
 	######################
 	# Process action request from Indigo Server to change thermostat's fan mode.
@@ -360,12 +361,15 @@ class Plugin(indigo.PluginBase):
 
 		if stateKey == u"setpointCool":
 			# Command hardware module (dev) to change the cool setpoint to newSetpoint here:
-			# ** IMPLEMENT ME **
-			sendSuccess = True			# Set to False if it failed.
+			indigo.server.log(u"set cool to: %s and leave heat at: %s" % (newSetpoint, dev.heatSetpoint))
+			if self.ecobee.set_hold_temp_id(dev.address, newSetpoint, dev.heatSetpoint):
+				sendSuccess = True		# Set to False if it failed.
+
 		elif stateKey == u"setpointHeat":
 			# Command hardware module (dev) to change the heat setpoint to newSetpoint here:
-			# ** IMPLEMENT ME **
-			sendSuccess = True			# Set to False if it failed.
+			indigo.server.log(u"set heat to: %s and leave cool at: %s" % (newSetpoint, dev.coolSetpoint))
+			if self.ecobee.set_hold_temp_id(dev.address, dev.coolSetpoint, newSetpoint):
+				sendSuccess = True		# Set to False if it failed.
 
 		if sendSuccess:
 			# If success then log that the command was successfully sent.

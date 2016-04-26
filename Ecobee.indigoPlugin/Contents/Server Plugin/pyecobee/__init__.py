@@ -217,6 +217,29 @@ class Ecobee(object):
             log.warning("Error connecting to Ecobee while attempting to set"
                   " hold temp.  Refreshing tokens...")
             self.refresh_tokens()
+    
+    def set_hold_temp_id(self, ident, cool_temp, heat_temp, hold_type="nextTransition"):
+        ''' Set a hold with identification number'''
+        url = 'https://api.ecobee.com/1/thermostat'
+        header = {'Content-Type': 'application/json;charset=UTF-8',
+                  'Authorization': 'Bearer ' + self.access_token}
+        params = {'format': 'json'}
+        body = ('{"functions":[{"type":"setHold","params":{"holdType":"'
+                + hold_type + '","coolHoldTemp":"' + str(int(cool_temp * 10)) +
+                '","heatHoldTemp":"' + str(int(heat_temp * 10)) + '"}}],'
+                '"selection":{"selectionType":"thermostats","selectionMatch"'
+                ':"' + ident + '"}}')
+        request = requests.post(url, headers=header, params=params, data=body)
+        # log.critical(u"sent request: %s" % body)
+        # log.critical(u"Got response: %s" % request)
+        if request.status_code == requests.codes.ok:
+            self._invalidate_cache()
+            return request
+        else:
+            log.warning("Error connecting to Ecobee while attempting to set"
+                  " hold temp.  Refreshing tokens...")
+            self.refresh_tokens()
+
 
     def set_climate_hold(self, index, climate, hold_type="nextTransition"):
         ''' Set a climate hold - ie away, home, sleep '''
