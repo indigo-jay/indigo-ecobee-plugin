@@ -175,14 +175,17 @@ class Ecobee(object):
         ''' Return remote sensors based on index '''
         return self.thermostats[index]['remoteSensors']
 
-    def set_hvac_mode(self, index, hvac_mode):
+    def set_hvac_mode(self, ident, hvac_mode):
+		# I am changing this to require the identifier, since we can get it from indigo
+		# whereas we don't have the index of where a particular thermostat is in
+		# self.thermostats 
         ''' possible hvac modes are auto, auxHeatOnly, cool, heat, off '''
         url = 'https://api.ecobee.com/1/thermostat'
         header = {'Content-Type': 'application/json;charset=UTF-8',
                   'Authorization': 'Bearer ' + self.access_token}
         params = {'format': 'json'}
         body = ('{"selection":{"selectionType":"thermostats","selectionMatch":'
-                '"' + self.thermostats[index]['identifier'] +
+                '"' + ident +
                 '"},"thermostat":{"settings":{"hvacMode":"' + hvac_mode +
                 '"}}}')
         request = requests.post(url, headers=header, params=params, data=body)
@@ -214,6 +217,29 @@ class Ecobee(object):
             log.warning("Error connecting to Ecobee while attempting to set"
                   " hold temp.  Refreshing tokens...")
             self.refresh_tokens()
+    
+    def set_hold_temp_id(self, ident, cool_temp, heat_temp, hold_type="nextTransition"):
+        ''' Set a hold with identification number'''
+        url = 'https://api.ecobee.com/1/thermostat'
+        header = {'Content-Type': 'application/json;charset=UTF-8',
+                  'Authorization': 'Bearer ' + self.access_token}
+        params = {'format': 'json'}
+        body = ('{"functions":[{"type":"setHold","params":{"holdType":"'
+                + hold_type + '","coolHoldTemp":"' + str(int(cool_temp * 10)) +
+                '","heatHoldTemp":"' + str(int(heat_temp * 10)) + '"}}],'
+                '"selection":{"selectionType":"thermostats","selectionMatch"'
+                ':"' + ident + '"}}')
+        request = requests.post(url, headers=header, params=params, data=body)
+        # log.critical(u"sent request: %s" % body)
+        # log.critical(u"Got response: %s" % request)
+        if request.status_code == requests.codes.ok:
+            self._invalidate_cache()
+            return request
+        else:
+            log.critical("Error connecting to Ecobee while attempting to set"
+                  " hold temp.  Refreshing tokens...")
+            self.refresh_tokens()
+
 
     def set_climate_hold(self, index, climate, hold_type="nextTransition"):
         ''' Set a climate hold - ie away, home, sleep '''
