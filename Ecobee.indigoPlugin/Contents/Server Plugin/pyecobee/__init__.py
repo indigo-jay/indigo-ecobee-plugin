@@ -236,7 +236,7 @@ class Ecobee(object):
             self._invalidate_cache()
             return request
         else:
-            log.warning("Error connecting to Ecobee while attempting to set"
+            log.critical("Error connecting to Ecobee while attempting to set"
                   " hold temp.  Refreshing tokens...")
             self.refresh_tokens()
 
