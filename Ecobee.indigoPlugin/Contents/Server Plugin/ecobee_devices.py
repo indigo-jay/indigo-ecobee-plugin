@@ -38,7 +38,7 @@ def get_thermostats(ecobee):
 
 def _get_thermostat_json(ecobee, address):
 	ths = _get_thermostats_json(ecobee)
-	log.info("looking for thermostat %s in %s" % (address, ths))
+	log.debug("looking for thermostat %s in %s" % (address, ths))
 	return [
 		th for th in ths
 		if address == th.get('identifier')
@@ -61,7 +61,7 @@ def get_remote_sensors(ecobee):
 
 def _get_remote_sensor_json(ecobee, address):
 	rss = _get_remote_sensors_json(ecobee)
-	log.info("looking for remote sensor %s in %s" % (address, rss))
+	log.debug("looking for remote sensor %s in %s" % (address, rss))
 	return [
 		rs for rs in rss
 		if address == rs.get('code')
@@ -135,7 +135,7 @@ class EcobeeThermostat(EcobeeBase):
 
 		status = thermostat.get('equipmentStatus')
 
-		log.info('heat setpoint: %s, cool setpoint: %s, hvac mode: %s, fan mode: %s, climate: %s, status %s' % (hsp, csp, hvacMode, fanMode, climate, status))
+		log.debug('heat setpoint: %s, cool setpoint: %s, hvac mode: %s, fan mode: %s, climate: %s, status %s' % (hsp, csp, hvacMode, fanMode, climate, status))
 
 		# should be exactly one; if not, we should panic
 		matchedSensor = [
