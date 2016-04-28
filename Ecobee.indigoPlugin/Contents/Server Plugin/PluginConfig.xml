@@ -11,6 +11,13 @@
 			<Option value="R">Rankine</Option>
 		</List>
 	</Field>
+	<Field id ="debuggingEnabled" type="menu">
+		<Label>Debug logging enabled:</Label>
+		<List>
+			<Option value="n">no</Option>
+			<Option value="y">yes</Option>
+		</List>
+	</Field>
 
 	<Field id="separator1" type="separator"/>
 
