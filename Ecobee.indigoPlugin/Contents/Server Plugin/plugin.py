@@ -5,10 +5,12 @@ import pyecobee
 import sys
 import json
 import indigo
-from ecobee_devices import EcobeeBase, EcobeeThermostat, EcobeeRemoteSensor
+from ecobee_devices import *
 import temperature_scale
 import logging
+from indigo_logging_handler import IndigoLoggingHandler
 
+logging.getLogger("requests").setLevel(logging.WARNING)
 
 DEBUG=False
 ACCESS_TOKEN_PLUGIN_PREF='accessToken'
@@ -23,18 +25,6 @@ TEMP_FORMATTERS = {
 	'R': temperature_scale.Rankine()
 }
 
-class IndigoLoggingHandler(logging.Handler):
-	def __init__(self, p):
-		 logging.Handler.__init__(self)
-		 self.plugin = p
-
-	def emit(self, record):
-		if record.levelno < 20:
-			self.plugin.debugLog(record.getMessage())
-		elif record.levelno < 40:
-			indigo.server.log(record.getMessage())
-		else:
-			self.plugin.errorLog(record.getMessage())
 
 class Plugin(indigo.PluginBase):
 
@@ -44,6 +34,7 @@ class Plugin(indigo.PluginBase):
 
 		self.active_remote_sensors = []
 		self.active_thermostats = []
+		self.active_smart_thermostats = []
 
 		logHandler = IndigoLoggingHandler(self)
 
@@ -95,11 +86,25 @@ class Plugin(indigo.PluginBase):
 	def validatePrefsConfigUi(self, valuesDict):
 		scaleInfo = valuesDict[TEMPERATURE_SCALE_PLUGIN_PREF]
 		self._setTemperatureScale(scaleInfo[0])
+		self.update_logging(bool(valuesDict['debuggingEnabled'] and "y" == valuesDict['debuggingEnabled']))
 		return True
 
 	def _setTemperatureScale(self, value):
 		self.log.debug(u'setting temperature scale to %s' % value)
 		EcobeeBase.temperatureFormatter = TEMP_FORMATTERS.get(value)
+
+	def update_logging(self, is_debug):
+		if is_debug:
+			self.debug = True
+			self.log.setLevel(logging.DEBUG)
+			logging.getLogger("indigo.ecobee.plugin").setLevel(logging.DEBUG)
+			self.log.debug("debug logging enabled")
+		else:
+			self.log.debug("debug logging disabled")
+			self.debug=False
+			self.log.setLevel(logging.INFO)
+			logging.getLogger("indigo.ecobee.plugin").setLevel(logging.INFO)
+
 
 	def startup(self):
 		self.debugLog(u"startup called")
@@ -130,43 +135,10 @@ class Plugin(indigo.PluginBase):
 		return valuesDict
 
 	def get_thermostats(self, filter="", valuesDict=None, typeId="", targetId=0):
-		self.ecobee.update()
-
-		# list of remote sensors contains the thermostat sensor, too
-		return [
-			(rs.get('id'), rs.get('name'))
-			for rs in self.ecobee.get_remote_sensors(0)
-				if 'thermostat' == rs.get('type')
-		]
+		return get_thermostats(self.ecobee)
 
 	def get_remote_sensors(self, filter="", valuesDict=None, typeId="", targetId=0):
-		self.ecobee.update()
-
-		# filter out the 'remote sensor' that's actually the Ecobee thermostat
-		return [
-			(rs.get('code'), rs.get('name'))
-			for rs in self.ecobee.get_remote_sensors(0)
-				if 'ecobee3_remote_sensor' == rs.get('type')
-		]
-
-	def get_orphan_remote_sensors(self, filter="", valuesDict=None, typeId="", targetId=0):
-		return self._filter_for_orphans(
-					self.get_remote_sensors(filter, valuesDict, typeId, targetId),
-					self.active_remote_sensors
-				)
-
-	def get_orphan_thermostats(self, filter="", valuesDict=None, typeId="", targetId=0):
-		return self._filter_for_orphans(
-					self.get_thermostats(filter, valuesDict, typeId, targetId),
-					self.active_thermostats
-				)
-
-	def _filter_for_orphans(self, tuples, actives):
-		return [
-			t for t in tuples
-				if not [ a for a in actives if a.address == t[0] ]
-		]
-
+		return get_remote_sensors(self.ecobee)
 
 	def _get_keys_from_ecobee(self, valuesDict):
 		valuesDict[ACCESS_TOKEN_PLUGIN_PREF] = self.ecobee.access_token
@@ -175,6 +147,8 @@ class Plugin(indigo.PluginBase):
 		return valuesDict
 
 	def deviceStartComm(self, dev):
+		dev.stateListOrDisplayStateIdChanged() # in case any states added/removed after plugin upgrade
+
 #		self.debugLog('deviceStartComm: %s' % dev)
 		if dev.model == 'Ecobee Remote Sensor':
 			self.debugLog("deviceStartComm: creating EcobeeRemoteSensor")
@@ -199,6 +173,19 @@ class Plugin(indigo.PluginBase):
 			self.active_thermostats.append(newDevice)
 			indigo.server.log("added thermostat %s" % dev.pluginProps["address"])
 
+		elif dev.model == 'Ecobee Smart Thermostat':
+			# Add support for the thermostat's humidity sensor
+			newProps = dev.pluginProps
+			newProps["NumHumidityInputs"] = 1
+			# SHENANIGANS: the following property has to be set in order for us to report
+			#   whether the thermostat is presently heating, cooling, etc.
+			#   This was difficult to find.
+			newProps["ShowCoolHeatEquipmentStateUI"] = True
+			dev.replacePluginPropsOnServer(newProps)
+			newDevice = EcobeeSmartThermostat(dev.pluginProps["address"], dev, self.ecobee)
+			self.active_smart_thermostats.append(newDevice)
+			indigo.server.log("added smart thermostat %s" % dev.pluginProps["address"])
+
 		# TODO: try to set initial name for new devices, as other plugins do.
 		# However, this doesn't work yet. Sad clown.
 		self.debugLog('device name: %s  ecobee name: %s' % (dev.name, newDevice.name))
@@ -221,12 +208,19 @@ class Plugin(indigo.PluginBase):
 				t for t in self.active_thermostats
 					if t.address != dev.pluginProps["address"]
 			]
+		elif dev.model == 'Ecobee Smart Thermostat':
+			self.active_smart_thermostats = [
+				st for st in self.active_smart_thermostats
+					if st.address != dev.pluginProps["address"]
+			]
 
 	def updateAllDevices(self):
 		for ers in self.active_remote_sensors:
 			ers.updateServer()
 		for t in self.active_thermostats:
 			t.updateServer()
+		for st in self.active_smart_thermostats:
+			st.updateServer()
 
 	def runConcurrentThread(self):
 		try:
