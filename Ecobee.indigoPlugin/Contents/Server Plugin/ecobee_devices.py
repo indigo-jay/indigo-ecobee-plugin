@@ -127,6 +127,7 @@ class EcobeeThermostat(EcobeeBase):
 		runtime = thermostat.get('runtime')
 		hsp = runtime.get('desiredHeat')
 		csp = runtime.get('desiredCool')
+		dispTemp = runtime.get('actualTemperature')
 		climate = thermostat.get('program').get('currentClimateRef')
 
 		settings = thermostat.get('settings')
@@ -145,7 +146,8 @@ class EcobeeThermostat(EcobeeBase):
 
 		self.name = matchedSensor.get('name')
 
-		self._update_server_temperature(matchedSensor, u'temperatureInput1')
+		self._update_server_smart_temperature(dispTemp, u'temperatureInput1')
+		self._update_server_temperature(matchedSensor, u'temperatureInput2')
 		self._update_server_occupancy(matchedSensor)
 
 		# humidity
