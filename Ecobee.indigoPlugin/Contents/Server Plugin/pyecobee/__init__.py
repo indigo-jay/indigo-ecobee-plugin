@@ -243,8 +243,8 @@ class Ecobee(object):
                   'Authorization': 'Bearer ' + self.access_token}
         params = {'format': 'json'}
         body = ('{"functions":[{"type":"setHold","params":{"holdType":"'
-                + hold_type + '","coolHoldTemp":"' + str(cool_temp * 10) +
-                '","heatHoldTemp":"' + str(heat_temp * 10) + '"}}],'
+                + hold_type + '","coolHoldTemp":"' + str(int(cool_temp * 10)) +
+                '","heatHoldTemp":"' + str(int(heat_temp * 10)) + '"}}],'
                 '"selection":{"selectionType":"thermostats","selectionMatch"'
                 ':"' + id + '"}}')
         request = requests.post(url, headers=header, params=params, data=body)
