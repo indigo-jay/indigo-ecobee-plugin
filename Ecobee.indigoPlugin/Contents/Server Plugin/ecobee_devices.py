@@ -21,6 +21,16 @@ HVAC_MODE_MAP = {
 	'off'         : indigo.kHvacMode.Off
 }
 
+kHvacModeEnumToStrMap = {
+	indigo.kHvacMode.Cool				: u"cool",
+	indigo.kHvacMode.Heat				: u"heat",
+	indigo.kHvacMode.HeatCool			: u"auto",
+	indigo.kHvacMode.Off				: u"off",
+	indigo.kHvacMode.ProgramHeat		: u"program heat",
+	indigo.kHvacMode.ProgramCool		: u"program cool",
+	indigo.kHvacMode.ProgramHeatCool	: u"program auto"
+}
+
 FAN_MODE_MAP = {
 	'auto': indigo.kFanMode.Auto,
 	'on'  : indigo.kFanMode.AlwaysOn
