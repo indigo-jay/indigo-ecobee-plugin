@@ -18,6 +18,8 @@ AUTHORIZATION_CODE_PLUGIN_PREF='authorizationCode'
 REFRESH_TOKEN_PLUGIN_PREF='refreshToken'
 TEMPERATURE_SCALE_PLUGIN_PREF='temperatureScale'
 
+
+
 TEMP_FORMATTERS = {
 	'F': temperature_scale.Fahrenheit(),
 	'C': temperature_scale.Celsius(),
@@ -179,6 +181,7 @@ class Plugin(indigo.PluginBase):
 			# Add support for the thermostat's humidity sensor
 			newProps = dev.pluginProps
 			newProps["NumHumidityInputs"] = 1
+			newProps["NumTemperatureInputs"] = 2
 			# SHENANIGANS: the following property has to be set in order for us to report
 			#   whether the thermostat is presently heating, cooling, etc.
 			#   This was difficult to find.
@@ -223,6 +226,69 @@ class Plugin(indigo.PluginBase):
 			t.updateServer()
 		for st in self.active_smart_thermostats:
 			st.updateServer()
+
+	########################################
+	# Thermostat Action callback
+	######################
+	# Main thermostat action bottleneck called by Indigo Server.
+	def actionControlThermostat(self, action, dev):
+		###### SET HVAC MODE ######
+		if action.thermostatAction == indigo.kThermostatAction.SetHvacMode:
+			self._handleChangeHvacModeAction(dev, action.actionMode)
+
+		###### SET FAN MODE ######
+		#elif action.thermostatAction == indigo.kThermostatAction.SetFanMode:
+			# self._handleChangeFanModeAction(dev, action.actionMode)
+
+		###### SET COOL SETPOINT ######
+		#elif action.thermostatAction == indigo.kThermostatAction.SetCoolSetpoint:
+			# newSetpoint = action.actionValue
+			# self._handleChangeSetpointAction(dev, newSetpoint, u"change cool setpoint", u"setpointCool")
+
+		###### SET HEAT SETPOINT ######
+		#elif action.thermostatAction == indigo.kThermostatAction.SetHeatSetpoint:
+			# newSetpoint = action.actionValue
+			#self._handleChangeSetpointAction(dev, newSetpoint, u"change heat setpoint", u"setpointHeat")
+
+		###### DECREASE/INCREASE COOL SETPOINT ######
+		#elif action.thermostatAction == indigo.kThermostatAction.DecreaseCoolSetpoint:
+			# newSetpoint = dev.coolSetpoint - action.actionValue
+			# self._handleChangeSetpointAction(dev, newSetpoint, u"decrease cool setpoint", u"setpointCool")
+
+		#elif action.thermostatAction == indigo.kThermostatAction.IncreaseCoolSetpoint:
+			# newSetpoint = dev.coolSetpoint + action.actionValue
+			# self._handleChangeSetpointAction(dev, newSetpoint, u"increase cool setpoint", u"setpointCool")
+
+		###### DECREASE/INCREASE HEAT SETPOINT ######
+		#elif action.thermostatAction == indigo.kThermostatAction.DecreaseHeatSetpoint:
+			# newSetpoint = dev.heatSetpoint - action.actionValue
+			# self._handleChangeSetpointAction(dev, newSetpoint, u"decrease heat setpoint", u"setpointHeat")
+
+		#elif action.thermostatAction == indigo.kThermostatAction.IncreaseHeatSetpoint:
+			# newSetpoint = dev.heatSetpoint + action.actionValue
+			# self._handleChangeSetpointAction(dev, newSetpoint, u"increase heat setpoint", u"setpointHeat")
+
+		###### REQUEST STATE UPDATES ######
+		#elif action.thermostatAction in [indigo.kThermostatAction.RequestStatusAll, indigo.kThermostatAction.RequestMode,
+		# indigo.kThermostatAction.RequestEquipmentState, indigo.kThermostatAction.RequestTemperatures, indigo.kThermostatAction.RequestHumidities,
+		# indigo.kThermostatAction.RequestDeadbands, indigo.kThermostatAction.RequestSetpoints]:
+		#	self._refreshStatesFromHardware(dev, True, False)
+
+	######################
+	# Process action request from Indigo Server to change main thermostat's main mode.
+	def _handleChangeHvacModeAction(self, dev, newHvacMode):
+		sendSuccess = False
+		hvac_mode = kHvacModeEnumToStrMap.get(newHvacMode, u"unknown")
+		if self.ecobee.set_hvac_mode_id(dev.pluginProps["address"], hvac_mode):
+			sendSuccess = True		# Set to False if it failed.
+
+		if sendSuccess:
+			indigo.server.log(u"sent \"%s\" mode change to %s" % (dev.name, hvac_mode))
+			if "hvacOperationMode" in dev.states:
+				dev.updateStateOnServer("hvacOperationMode", newHvacMode)
+		else:
+			# Else log failure but do NOT update state on Indigo Server.
+			indigo.server.log(u"send \"%s\" mode change to %s failed" % (dev.name, hvac_mode), isError=True)
 
 	def runConcurrentThread(self):
 		try:
