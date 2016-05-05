@@ -71,14 +71,13 @@ class Plugin(indigo.PluginBase):
 
 		self.pluginPrefs["pin"] = self.ecobee.pin
 		if self.ecobee.authenticated:
-			self.pluginPrefs
 			self.pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF] = self.ecobee.access_token
 			self.pluginPrefs[AUTHORIZATION_CODE_PLUGIN_PREF] = self.ecobee.authorization_code
 			self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF] = self.ecobee.refresh_token
 		else:
-			self.pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF] = ''
-			self.pluginPrefs[AUTHORIZATION_CODE_PLUGIN_PREF] = ''
-			self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF] = ''
+			#self.pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF] = ''
+			#self.pluginPrefs[AUTHORIZATION_CODE_PLUGIN_PREF] = ''
+			#self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF] = ''
 			self.errorLog('Ecobee device requires authentication; open plugin configuration page for info')
 
 
