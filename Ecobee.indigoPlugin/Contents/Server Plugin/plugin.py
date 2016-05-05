@@ -164,6 +164,8 @@ class Plugin(indigo.PluginBase):
 			# Add support for the thermostat's humidity sensor
 			newProps = dev.pluginProps
 			newProps["NumHumidityInputs"] = 1
+			# Ecobee3 have two temperatures - the one displayed on the thermostat and the one sensed at the thermostat
+			newProps["NumTemperatureInputs"] = 2
 			# SHENANIGANS: the following property has to be set in order for us to report
 			#   whether the thermostat is presently heating, cooling, etc.
 			#   This was difficult to find.
