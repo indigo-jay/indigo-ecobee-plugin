@@ -277,11 +277,15 @@ class Plugin(indigo.PluginBase):
 	######################
 	# Process action request from Indigo Server to change main thermostat's main mode.
 	def _handleChangeHvacModeAction(self, dev, newHvacMode):
-		sendSuccess = False
 		hvac_mode = kHvacModeEnumToStrMap.get(newHvacMode, u"unknown")
+		indigo.server.log(u"mode: %s --> set to: %s" % (newHvacMode, kHvacModeEnumToStrMap.get(newHvacMode)))
+ 		indigo.server.log(u"address: %s set to: %s" % (int(dev.address), kHvacModeEnumToStrMap.get(newHvacMode)))
+		
+		sendSuccess = False
+		
 		if self.ecobee.set_hvac_mode_id(dev.pluginProps["address"], hvac_mode):
 			sendSuccess = True
-
+			
 		if sendSuccess:
 			indigo.server.log(u"sent \"%s\" mode change to %s" % (dev.name, hvac_mode))
 			if "hvacOperationMode" in dev.states:
@@ -298,13 +302,16 @@ class Plugin(indigo.PluginBase):
 			newSetpoint = 95.0		# Arbitrary -- set to whatever hardware maximum setpoint value is.
 
 		sendSuccess = False
-# id, cool_temp, heat_temp,
+
 		if stateKey == u"setpointCool":
-			if self.ecobee.set_hold_temp_id(dev.pluginProps["address"], newSetpoint, dev.states["setpointHeat"]):
+			indigo.server.log(u"set cool to: %s and leave heat at: %s" % (newSetpoint, dev.heatSetpoint))
+			if self.ecobee.set_hold_temp_id(dev.address, newSetpoint, dev.heatSetpoint):
 				sendSuccess = True
+		
 		elif stateKey == u"setpointHeat":
-			if self.ecobee.set_hold_temp_id(dev.pluginProps["address"], dev.states["setpointCool"], newSetpoint):
-				sendSuccess = True
+			indigo.server.log(u"set heat to: %s and leave cool at: %s" % (newSetpoint, dev.coolSetpoint))
+ 			if self.ecobee.set_hold_temp_id(dev.address, dev.coolSetpoint, newSetpoint):
+				sendSuccess = True		# Set to False if it failed.
 
 		if sendSuccess:
 			indigo.server.log(u"sent \"%s\" %s to %.1f°" % (dev.name, logActionName, newSetpoint))
