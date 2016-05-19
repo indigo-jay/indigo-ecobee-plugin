@@ -100,6 +100,7 @@ class EcobeeBase:
 
 	def _update_server_temperature(self, matchedSensor, stateKey):
 		tempCapability = _get_capability(matchedSensor, 'temperature')
+		indigo.server.log('Sensor Temp: %s' % tempCapability.get('value'))
 		return EcobeeBase.temperatureFormatter.report(self.dev, stateKey, tempCapability.get('value'))
 		return temperature
 
@@ -146,7 +147,9 @@ class EcobeeThermostat(EcobeeBase):
 
 		self.name = matchedSensor.get('name')
 
+		indigo.server.log('display temp, zone 1: %s' % dispTemp)
 		self._update_server_smart_temperature(dispTemp, u'temperatureInput1')
+		indigo.server.log('Thermostate temp, zone 2, sensor: %s' % matchedSensor)
 		self._update_server_temperature(matchedSensor, u'temperatureInput2')
 		self._update_server_occupancy(matchedSensor)
 
