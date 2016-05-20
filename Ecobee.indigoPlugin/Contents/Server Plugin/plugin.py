@@ -65,7 +65,7 @@ class Plugin(indigo.PluginBase):
 		if REFRESH_TOKEN_PLUGIN_PREF in pluginPrefs:
 			tmpconfig['REFRESH_TOKEN'] = pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF]
 		self.debugLog(u"constructed pyecobee config: %s" % json.dumps(tmpconfig))
-
+		indigo.server.log("config string: %s" % json.dumps(tmpconfig))
 		# Create an ecobee object with the config dictionary
 		self.ecobee = pyecobee.Ecobee(config = tmpconfig)
 
