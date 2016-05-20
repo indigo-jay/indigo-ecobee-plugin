@@ -21,6 +21,16 @@ HVAC_MODE_MAP = {
 	'off'         : indigo.kHvacMode.Off
 }
 
+kHvacModeEnumToStrMap = {
+	indigo.kHvacMode.Cool				: u"cool",
+	indigo.kHvacMode.Heat				: u"heat",
+	indigo.kHvacMode.HeatCool			: u"auto",
+	indigo.kHvacMode.Off				: u"off",
+	indigo.kHvacMode.ProgramHeat		: u"program heat",
+	indigo.kHvacMode.ProgramCool		: u"program cool",
+	indigo.kHvacMode.ProgramHeatCool	: u"program auto"
+}
+
 FAN_MODE_MAP = {
 	'auto': indigo.kFanMode.Auto,
 	'on'  : indigo.kFanMode.AlwaysOn
@@ -100,6 +110,7 @@ class EcobeeBase:
 
 	def _update_server_temperature(self, matchedSensor, stateKey):
 		tempCapability = _get_capability(matchedSensor, 'temperature')
+		log.debug('Sensor Temp: %s' % tempCapability.get('value'))
 		return EcobeeBase.temperatureFormatter.report(self.dev, stateKey, tempCapability.get('value'))
 		return temperature
 
@@ -146,7 +157,9 @@ class EcobeeThermostat(EcobeeBase):
 
 		self.name = matchedSensor.get('name')
 
+		log.debug('display temp, zone 1: %s' % dispTemp)
 		self._update_server_smart_temperature(dispTemp, u'temperatureInput1')
+		log.debug('Thermostate temp, zone 2, sensor: %s' % matchedSensor)
 		self._update_server_temperature(matchedSensor, u'temperatureInput2')
 		self._update_server_occupancy(matchedSensor)
 
@@ -192,7 +205,7 @@ class EcobeeSmartThermostat(EcobeeBase):
 
 		status = thermostat.get('equipmentStatus')
 
-		log.info('heat setpoint: %s, cool setpoint: %s, hvac mode: %s, fan mode: %s, climate: %s, status %s' % (hsp, csp, hvacMode, fanMode, climate, status))
+		log.debug('heat setpoint: %s, cool setpoint: %s, hvac mode: %s, fan mode: %s, climate: %s, status %s' % (hsp, csp, hvacMode, fanMode, climate, status))
 
 		self.name = thermostat.get('name')
 
