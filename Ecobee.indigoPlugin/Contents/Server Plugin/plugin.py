@@ -65,7 +65,6 @@ class Plugin(indigo.PluginBase):
 		if REFRESH_TOKEN_PLUGIN_PREF in pluginPrefs:
 			tmpconfig['REFRESH_TOKEN'] = pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF]
 		self.debugLog(u"constructed pyecobee config: %s" % json.dumps(tmpconfig))
-		indigo.server.log("config string: %s" % json.dumps(tmpconfig))
 		# Create an ecobee object with the config dictionary
 		self.ecobee = pyecobee.Ecobee(config = tmpconfig)
 
@@ -75,9 +74,9 @@ class Plugin(indigo.PluginBase):
 			self.pluginPrefs[AUTHORIZATION_CODE_PLUGIN_PREF] = self.ecobee.authorization_code
 			self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF] = self.ecobee.refresh_token
 		else:
-			#self.pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF] = ''
-			#self.pluginPrefs[AUTHORIZATION_CODE_PLUGIN_PREF] = ''
-			#self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF] = ''
+			self.pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF] = ''
+			self.pluginPrefs[AUTHORIZATION_CODE_PLUGIN_PREF] = ''
+			self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF] = ''
 			self.errorLog('Ecobee device requires authentication; open plugin configuration page for info')
 
 
@@ -114,7 +113,6 @@ class Plugin(indigo.PluginBase):
 		self.debugLog(u"shutdown called")
 
 	def request_pin(self, valuesDict = None):
-		indigo.server.log(u"requesting pin")
 
 		valuesDict[ACCESS_TOKEN_PLUGIN_PREF] = ''
 		valuesDict[AUTHORIZATION_CODE_PLUGIN_PREF] = ''
@@ -195,9 +193,6 @@ class Plugin(indigo.PluginBase):
 			dev.name = newDevice.name
 			dev.replaceOnServer()
 			self.debugLog('device name set to %s' % dev.name)
-
-#		indigo.server.log(u"device added; plugin props: %s" % dev.pluginProps)
-#		indigo.server.log(u"device added: %s" % dev)
 
 	def deviceStopComm(self, dev):
 		if dev.model == 'Ecobee Remote Sensor':
@@ -331,5 +326,9 @@ class Plugin(indigo.PluginBase):
 				self.sleep(15)
 				if self.ecobee.authenticated:
 					self.ecobee.update()
+					# We need to also re-save the authentication credentials now, since self.ecobee.update() may change them
+					self.pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF] = self.ecobee.access_token
+					self.pluginPrefs[AUTHORIZATION_CODE_PLUGIN_PREF] = self.ecobee.authorization_code
+					self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF] = self.ecobee.refresh_token
 		except self.StopThread:
 			pass	# Optionally catch the StopThread exception and do any needed cleanup.

@@ -95,15 +95,12 @@ class Ecobee(object):
     def request_tokens(self):
         ''' Method to request API tokens from ecobee '''
         log.debug("pyecobee: requesting tokens; current authentication flag is %s" % self.authenticated)
-        log.error("pyecobee: requesting tokens; current authentication flag is %s" % self.authenticated)
         url = 'https://api.ecobee.com/token'
         params = {'grant_type': 'ecobeePin', 'code': self.authorization_code,
                   'client_id': self.api_key}
-        log.error("params: %s" % params)
         request = requests.post(url, params=params)
         if request.status_code == requests.codes.ok:
             log.info("pyecobee: authenticated after requesting tokens")
-            log.error("pyecobee: authenticated after requesting tokens")
             self.access_token = request.json()['access_token']
             self.refresh_token = request.json()['refresh_token']
             self.write_tokens_to_file()
@@ -117,24 +114,22 @@ class Ecobee(object):
         log.debug("pyecobee: finished requesting tokens; authenticated flag is %s" % self.authenticated)
 
     def refresh_tokens(self):
-        log.error("pyecobee: refreshing tokens; current authentication flag is %s" % self.authenticated) #change to debug
+        log.debug("pyecobee: refreshing tokens; current authentication flag is %s" % self.authenticated)
         ''' Method to refresh API tokens from ecobee '''
         url = 'https://api.ecobee.com/token'
         params = {'grant_type': 'refresh_token',
                   'client_id': self.api_key,
                   'refresh_token': self.refresh_token}
-        log.error("params: %s" % params)
         request = requests.post(url, params=params)
         if request.status_code == requests.codes.ok:
-            log.error("pyecobee: authenticated after refreshing tokens") #change to log.info
+            log.info("pyecobee: authenticated after refreshing tokens")
             self.access_token = request.json()['access_token']
             self.refresh_token = request.json()['refresh_token']
             self.write_tokens_to_file()
             self.authenticated = True
             return True
-        else:
-            log.error("pyecobee: NOT authenticated after refreshing tokens") #change to log.info
-            log.error("response: %s" % request.text)
+        else:	
+            log.info("pyecobee: NOT authenticated after refreshing tokens")
             self.request_pin()
             self.authenticated = False
 
@@ -156,10 +151,7 @@ class Ecobee(object):
                            '"includeRuntime":"true","includeSensors":"true",'
                            '"includeProgram":"true","includeEquipmentStatus"'
                            ':true,"includeSettings":true}}')}
-        log.error("header: %s" % header)
-        log.error("params: %s" % params)
         request = requests.get(url, headers=header, params=params)
-        # log.error("response: %s" % request.text)
         if request.status_code == requests.codes.ok:
             self.authenticated = True
             self.thermostats = request.json()['thermostatList']

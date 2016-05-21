@@ -130,7 +130,7 @@ class EcobeeThermostat(EcobeeBase):
 		EcobeeBase.__init__(self, address, dev, pyecobee)
 
 	def updateServer(self):
-		log.debug("updating thermostat from server")
+		log.debug("updating ecobee3 thermostat from server")
 		if not self.updatable():
 			return
 
@@ -157,9 +157,7 @@ class EcobeeThermostat(EcobeeBase):
 
 		self.name = matchedSensor.get('name')
 
-		log.debug('display temp, zone 1: %s' % dispTemp)
 		self._update_server_smart_temperature(dispTemp, u'temperatureInput1')
-		log.debug('Thermostate temp, zone 2, sensor: %s' % matchedSensor)
 		self._update_server_temperature(matchedSensor, u'temperatureInput2')
 		self._update_server_occupancy(matchedSensor)
 
