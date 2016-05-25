@@ -234,5 +234,9 @@ class Plugin(indigo.PluginBase):
 				self.sleep(15)
 				if self.ecobee.authenticated:
 					self.ecobee.update()
+					# We need to also re-save the authentication credentials now, since self.ecobee.update() may change them
+					self.pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF] = self.ecobee.access_token
+					self.pluginPrefs[AUTHORIZATION_CODE_PLUGIN_PREF] = self.ecobee.authorization_code
+					self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF] = self.ecobee.refresh_token
 		except self.StopThread:
 			pass	# Optionally catch the StopThread exception and do any needed cleanup.
