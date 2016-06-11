@@ -100,9 +100,19 @@
 				<TriggerLabel>Occupied</TriggerLabel>
 				<ControlPageLabel>Occupied</ControlPageLabel>
 			</State>
+			<State id="autoAway" readonly="true">
+				<ValueType boolType="YesNo">Boolean</ValueType>
+				<TriggerLabel>Auto-Away</TriggerLabel>
+				<ControlPageLabel>Auto-Away</ControlPageLabel>
+			</State>
+			<State id="autoHome" readonly="true">
+				<ValueType boolType="YesNo">Boolean</ValueType>
+				<TriggerLabel>Auto-Home</TriggerLabel>
+				<ControlPageLabel>Auto-Home</ControlPageLabel>
+			</State>
 		</States>
 	</Device>
-	
+
 	<Device type="thermostat" id="EcobeeSmartThermostat">
 		<Name>Ecobee Smart Thermostat</Name>
 		<ConfigUI>
