@@ -147,7 +147,9 @@ class EcobeeThermostat(EcobeeBase):
 
 		status = thermostat.get('equipmentStatus')
 
-		latestEventType = thermostat.get('events')[0].get('type')
+		latestEventType = None
+		if thermostat.get('events') and len(thermostat.get('events')) > 0:
+			latestEventType = thermostat.get('events')[0].get('type')
 
 		log.debug('heat setpoint: %s, cool setpoint: %s, hvac mode: %s, fan mode: %s, climate: %s, status %s' % (hsp, csp, hvacMode, fanMode, climate, status))
 
