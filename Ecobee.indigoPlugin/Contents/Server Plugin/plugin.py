@@ -18,6 +18,8 @@ AUTHORIZATION_CODE_PLUGIN_PREF='authorizationCode'
 REFRESH_TOKEN_PLUGIN_PREF='refreshToken'
 TEMPERATURE_SCALE_PLUGIN_PREF='temperatureScale'
 
+
+
 TEMP_FORMATTERS = {
 	'F': temperature_scale.Fahrenheit(),
 	'C': temperature_scale.Celsius(),
@@ -63,13 +65,11 @@ class Plugin(indigo.PluginBase):
 		if REFRESH_TOKEN_PLUGIN_PREF in pluginPrefs:
 			tmpconfig['REFRESH_TOKEN'] = pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF]
 		self.debugLog(u"constructed pyecobee config: %s" % json.dumps(tmpconfig))
-
 		# Create an ecobee object with the config dictionary
 		self.ecobee = pyecobee.Ecobee(config = tmpconfig)
 
 		self.pluginPrefs["pin"] = self.ecobee.pin
 		if self.ecobee.authenticated:
-			self.pluginPrefs
 			self.pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF] = self.ecobee.access_token
 			self.pluginPrefs[AUTHORIZATION_CODE_PLUGIN_PREF] = self.ecobee.authorization_code
 			self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF] = self.ecobee.refresh_token
@@ -113,7 +113,6 @@ class Plugin(indigo.PluginBase):
 		self.debugLog(u"shutdown called")
 
 	def request_pin(self, valuesDict = None):
-		indigo.server.log(u"requesting pin")
 
 		valuesDict[ACCESS_TOKEN_PLUGIN_PREF] = ''
 		valuesDict[AUTHORIZATION_CODE_PLUGIN_PREF] = ''
@@ -164,6 +163,7 @@ class Plugin(indigo.PluginBase):
 			# Add support for the thermostat's humidity sensor
 			newProps = dev.pluginProps
 			newProps["NumHumidityInputs"] = 1
+			newProps["NumTemperatureInputs"] = 2
 			# SHENANIGANS: the following property has to be set in order for us to report
 			#   whether the thermostat is presently heating, cooling, etc.
 			#   This was difficult to find.
@@ -194,9 +194,6 @@ class Plugin(indigo.PluginBase):
 			dev.replaceOnServer()
 			self.debugLog('device name set to %s' % dev.name)
 
-#		indigo.server.log(u"device added; plugin props: %s" % dev.pluginProps)
-#		indigo.server.log(u"device added: %s" % dev)
-
 	def deviceStopComm(self, dev):
 		if dev.model == 'Ecobee Remote Sensor':
 			self.active_remote_sensors = [
@@ -222,6 +219,101 @@ class Plugin(indigo.PluginBase):
 		for st in self.active_smart_thermostats:
 			st.updateServer()
 
+	########################################
+	# Thermostat Action callback
+	######################
+	# Main thermostat action bottleneck called by Indigo Server.
+	def actionControlThermostat(self, action, dev):
+		###### SET HVAC MODE ######
+		if action.thermostatAction == indigo.kThermostatAction.SetHvacMode:
+			self._handleChangeHvacModeAction(dev, action.actionMode)
+
+		###### SET FAN MODE ######
+		#elif action.thermostatAction == indigo.kThermostatAction.SetFanMode:
+			# self._handleChangeFanModeAction(dev, action.actionMode)
+
+		###### SET COOL SETPOINT ######
+		elif action.thermostatAction == indigo.kThermostatAction.SetCoolSetpoint:
+			newSetpoint = action.actionValue
+			self._handleChangeSetpointAction(dev, newSetpoint, u"change cool setpoint", u"setpointCool")
+
+		###### SET HEAT SETPOINT ######
+		elif action.thermostatAction == indigo.kThermostatAction.SetHeatSetpoint:
+			newSetpoint = action.actionValue
+			self._handleChangeSetpointAction(dev, newSetpoint, u"change heat setpoint", u"setpointHeat")
+
+		###### DECREASE/INCREASE COOL SETPOINT ######
+		elif action.thermostatAction == indigo.kThermostatAction.DecreaseCoolSetpoint:
+			newSetpoint = dev.coolSetpoint - action.actionValue
+			self._handleChangeSetpointAction(dev, newSetpoint, u"decrease cool setpoint", u"setpointCool")
+
+		elif action.thermostatAction == indigo.kThermostatAction.IncreaseCoolSetpoint:
+			newSetpoint = dev.coolSetpoint + action.actionValue
+			self._handleChangeSetpointAction(dev, newSetpoint, u"increase cool setpoint", u"setpointCool")
+
+		###### DECREASE/INCREASE HEAT SETPOINT ######
+		elif action.thermostatAction == indigo.kThermostatAction.DecreaseHeatSetpoint:
+			newSetpoint = dev.heatSetpoint - action.actionValue
+			self._handleChangeSetpointAction(dev, newSetpoint, u"decrease heat setpoint", u"setpointHeat")
+
+		elif action.thermostatAction == indigo.kThermostatAction.IncreaseHeatSetpoint:
+			newSetpoint = dev.heatSetpoint + action.actionValue
+			self._handleChangeSetpointAction(dev, newSetpoint, u"increase heat setpoint", u"setpointHeat")
+
+		###### REQUEST STATE UPDATES ######
+		#elif action.thermostatAction in [indigo.kThermostatAction.RequestStatusAll, indigo.kThermostatAction.RequestMode,
+		# indigo.kThermostatAction.RequestEquipmentState, indigo.kThermostatAction.RequestTemperatures, indigo.kThermostatAction.RequestHumidities,
+		# indigo.kThermostatAction.RequestDeadbands, indigo.kThermostatAction.RequestSetpoints]:
+		#	self._refreshStatesFromHardware(dev, True, False)
+
+	######################
+	# Process action request from Indigo Server to change main thermostat's main mode.
+	def _handleChangeHvacModeAction(self, dev, newHvacMode):
+		hvac_mode = kHvacModeEnumToStrMap.get(newHvacMode, u"unknown")
+		indigo.server.log(u"mode: %s --> set to: %s" % (newHvacMode, kHvacModeEnumToStrMap.get(newHvacMode)))
+ 		indigo.server.log(u"address: %s set to: %s" % (int(dev.address), kHvacModeEnumToStrMap.get(newHvacMode)))
+		
+		sendSuccess = False
+		
+		if self.ecobee.set_hvac_mode_id(dev.pluginProps["address"], hvac_mode):
+			sendSuccess = True
+			
+		if sendSuccess:
+			indigo.server.log(u"sent \"%s\" mode change to %s" % (dev.name, hvac_mode))
+			if "hvacOperationMode" in dev.states:
+				dev.updateStateOnServer("hvacOperationMode", newHvacMode)
+		else:
+			indigo.server.log(u"send \"%s\" mode change to %s failed" % (dev.name, hvac_mode), isError=True)
+
+	######################
+	# Process action request from Indigo Server to change a cool/heat setpoint.
+	def _handleChangeSetpointAction(self, dev, newSetpoint, logActionName, stateKey):
+		if newSetpoint < 40.0:
+			newSetpoint = 40.0		# Arbitrary -- set to whatever hardware minimum setpoint value is.
+		elif newSetpoint > 95.0:
+			newSetpoint = 95.0		# Arbitrary -- set to whatever hardware maximum setpoint value is.
+
+		sendSuccess = False
+
+		if stateKey == u"setpointCool":
+			indigo.server.log(u"set cool to: %s and leave heat at: %s" % (newSetpoint, dev.heatSetpoint))
+			if self.ecobee.set_hold_temp_id(dev.address, newSetpoint, dev.heatSetpoint):
+				sendSuccess = True
+		
+		elif stateKey == u"setpointHeat":
+			indigo.server.log(u"set heat to: %s and leave cool at: %s" % (newSetpoint, dev.coolSetpoint))
+ 			if self.ecobee.set_hold_temp_id(dev.address, dev.coolSetpoint, newSetpoint):
+				sendSuccess = True		# Set to False if it failed.
+
+		if sendSuccess:
+			indigo.server.log(u"sent \"%s\" %s to %.1f°" % (dev.name, logActionName, newSetpoint))
+			# And then tell the Indigo Server to update the state.
+			if stateKey in dev.states:
+				dev.updateStateOnServer(stateKey, newSetpoint, uiValue="%.1f °F" % (newSetpoint))
+		else:
+			# Else log failure but do NOT update state on Indigo Server.
+			indigo.server.log(u"send \"%s\" %s to %.1f° failed" % (dev.name, logActionName, newSetpoint), isError=True)
+
 	def runConcurrentThread(self):
 		try:
 			while True:
@@ -234,5 +326,9 @@ class Plugin(indigo.PluginBase):
 				self.sleep(15)
 				if self.ecobee.authenticated:
 					self.ecobee.update()
+					# We need to also re-save the authentication credentials now, since self.ecobee.update() may change them
+					self.pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF] = self.ecobee.access_token
+					self.pluginPrefs[AUTHORIZATION_CODE_PLUGIN_PREF] = self.ecobee.authorization_code
+					self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF] = self.ecobee.refresh_token
 		except self.StopThread:
 			pass	# Optionally catch the StopThread exception and do any needed cleanup.

@@ -118,8 +118,8 @@ class Ecobee(object):
         ''' Method to refresh API tokens from ecobee '''
         url = 'https://api.ecobee.com/token'
         params = {'grant_type': 'refresh_token',
-                  'refresh_token': self.refresh_token,
-                  'client_id': self.api_key}
+                  'client_id': self.api_key,
+                  'refresh_token': self.refresh_token}
         request = requests.post(url, params=params)
         if request.status_code == requests.codes.ok:
             log.info("pyecobee: authenticated after refreshing tokens")
@@ -149,6 +149,7 @@ class Ecobee(object):
                   'Authorization': 'Bearer ' + self.access_token}
         params = {'json': ('{"selection":{"selectionType":"registered",'
                            '"includeRuntime":"true","includeSensors":"true",'
+                           '"includeEvents":"true",'
                            '"includeProgram":"true","includeEquipmentStatus"'
                            ':true,"includeSettings":true}}')}
         request = requests.get(url, headers=header, params=params)
@@ -156,15 +157,17 @@ class Ecobee(object):
             self.authenticated = True
             self.thermostats = request.json()['thermostatList']
             self.lastRefreshTime = time.time()
+            log.debug("result: %s" % request.json())
             return self.thermostats
         else:
             self.authenticated = False
-            log.warning("Error connecting to Ecobee while attempting to get "
+            log.info("Error connecting to Ecobee while attempting to get "
                   "thermostat data.  Refreshing tokens and trying again.")
             if self.refresh_tokens():
                 return self.get_thermostats()
             else:
                 log.error("pyecobee: not authenticated to Ecobee servers")
+                log.error("request status code: %s" % request.status_code)
                 return None
 
     def get_thermostat(self, index):
@@ -194,6 +197,26 @@ class Ecobee(object):
                   " HVAC mode.  Refreshing tokens...")
             self.refresh_tokens()
 
+    def set_hvac_mode_id(self, id, hvac_mode):
+        ''' possible hvac modes are auto, auxHeatOnly, cool, heat, off '''
+        url = 'https://api.ecobee.com/1/thermostat'
+        header = {'Content-Type': 'application/json;charset=UTF-8',
+                  'Authorization': 'Bearer ' + self.access_token}
+        params = {'format': 'json'}
+        body = ('{"selection":{"selectionType":"thermostats","selectionMatch":'
+                '"' + id +
+                '"},"thermostat":{"settings":{"hvacMode":"' + hvac_mode +
+                '"}}}')
+        request = requests.post(url, headers=header, params=params, data=body)
+        if request.status_code == requests.codes.ok:
+            self._invalidate_cache()
+            return request
+        else:
+            log.warning("Error connecting to Ecobee while attempting to set"
+                  " HVAC mode.  Refreshing tokens...")
+            self.refresh_tokens()
+
+
     def set_hold_temp(self, index, cool_temp, heat_temp,
                       hold_type="nextTransition"):
         ''' Set a hold '''
@@ -206,6 +229,27 @@ class Ecobee(object):
                 '","heatHoldTemp":"' + str(heat_temp * 10) + '"}}],'
                 '"selection":{"selectionType":"thermostats","selectionMatch"'
                 ':"' + self.thermostats[index]['identifier'] + '"}}')
+        request = requests.post(url, headers=header, params=params, data=body)
+        if request.status_code == requests.codes.ok:
+            self._invalidate_cache()
+            return request
+        else:
+            log.warning("Error connecting to Ecobee while attempting to set"
+                  " hold temp.  Refreshing tokens...")
+            self.refresh_tokens()
+
+    def set_hold_temp_id(self, id, cool_temp, heat_temp,
+                      hold_type="nextTransition"):
+        ''' Set a hold '''
+        url = 'https://api.ecobee.com/1/thermostat'
+        header = {'Content-Type': 'application/json;charset=UTF-8',
+                  'Authorization': 'Bearer ' + self.access_token}
+        params = {'format': 'json'}
+        body = ('{"functions":[{"type":"setHold","params":{"holdType":"'
+                + hold_type + '","coolHoldTemp":"' + str(int(cool_temp * 10)) +
+                '","heatHoldTemp":"' + str(int(heat_temp * 10)) + '"}}],'
+                '"selection":{"selectionType":"thermostats","selectionMatch"'
+                ':"' + id + '"}}')
         request = requests.post(url, headers=header, params=params, data=body)
         if request.status_code == requests.codes.ok:
             self._invalidate_cache()
