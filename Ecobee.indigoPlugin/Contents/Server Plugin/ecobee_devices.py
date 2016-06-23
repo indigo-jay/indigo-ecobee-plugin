@@ -147,6 +147,10 @@ class EcobeeThermostat(EcobeeBase):
 
 		status = thermostat.get('equipmentStatus')
 
+		latestEventType = None
+		if thermostat.get('events') and len(thermostat.get('events')) > 0:
+			latestEventType = thermostat.get('events')[0].get('type')
+
 		log.debug('heat setpoint: %s, cool setpoint: %s, hvac mode: %s, fan mode: %s, climate: %s, status %s' % (hsp, csp, hvacMode, fanMode, climate, status))
 
 		# should be exactly one; if not, we should panic
@@ -174,6 +178,9 @@ class EcobeeThermostat(EcobeeBase):
 		self.dev.updateStateOnServer(key="hvacHeaterIsOn", value=bool(status and ('heatPump' in status or 'auxHeat' in status)))
 		self.dev.updateStateOnServer(key="hvacCoolerIsOn", value=bool(status and ('compCool' in status)))
 		self.dev.updateStateOnServer(key="hvacFanIsOn", value=bool(status and ('fan' in status or 'ventilator' in status)))
+
+		self.dev.updateStateOnServer(key="autoHome", value=bool(latestEventType and ('autoHome' in latestEventType)))
+		self.dev.updateStateOnServer(key="autoAway", value=bool(latestEventType and ('autoAway' in latestEventType)))
 
 		return matchedSensor
 

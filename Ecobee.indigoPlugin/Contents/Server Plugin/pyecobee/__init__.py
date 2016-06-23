@@ -128,7 +128,7 @@ class Ecobee(object):
             self.write_tokens_to_file()
             self.authenticated = True
             return True
-        else:	
+        else:
             log.info("pyecobee: NOT authenticated after refreshing tokens")
             self.request_pin()
             self.authenticated = False
@@ -149,6 +149,7 @@ class Ecobee(object):
                   'Authorization': 'Bearer ' + self.access_token}
         params = {'json': ('{"selection":{"selectionType":"registered",'
                            '"includeRuntime":"true","includeSensors":"true",'
+                           '"includeEvents":"true",'
                            '"includeProgram":"true","includeEquipmentStatus"'
                            ':true,"includeSettings":true}}')}
         request = requests.get(url, headers=header, params=params)
@@ -156,6 +157,7 @@ class Ecobee(object):
             self.authenticated = True
             self.thermostats = request.json()['thermostatList']
             self.lastRefreshTime = time.time()
+            log.debug("result: %s" % request.json())
             return self.thermostats
         else:
             self.authenticated = False
@@ -194,7 +196,7 @@ class Ecobee(object):
             log.warning("Error connecting to Ecobee while attempting to set"
                   " HVAC mode.  Refreshing tokens...")
             self.refresh_tokens()
-    
+
     def set_hvac_mode_id(self, id, hvac_mode):
         ''' possible hvac modes are auto, auxHeatOnly, cool, heat, off '''
         url = 'https://api.ecobee.com/1/thermostat'
