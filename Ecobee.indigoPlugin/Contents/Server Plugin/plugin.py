@@ -266,7 +266,26 @@ class Plugin(indigo.PluginBase):
 		# indigo.kThermostatAction.RequestDeadbands, indigo.kThermostatAction.RequestSetpoints]:
 		#	self._refreshStatesFromHardware(dev, True, False)
 
+	########################################
+	# Resume Program callback
 	######################
+	def actionResumeProgram(self, action, dev):
+		###### RESUME PROGRAM ######
+                resume_all = "false"
+                if action.props.get("resume_all"):
+                        resume_all = "true"
+                self._resumeProgram(dev, resume_all)
+
+        def _resumeProgram(self, dev, resume_all):
+                sendSuccess = False
+                if self.ecobee.resume_program_id(dev.pluginProps["address"], resume_all) :
+                        sendSuccess = True;
+                if sendSuccess:
+                        indigo.server.log(u"sent resume_program to %s" % dev.address)
+                else:
+                        indigo.server.log(u"Failed to send resume_program to %s" % dev.address, isError=true)
+
+        ######################
 	# Process action request from Indigo Server to change main thermostat's main mode.
 	def _handleChangeHvacModeAction(self, dev, newHvacMode):
 		hvac_mode = kHvacModeEnumToStrMap.get(newHvacMode, u"unknown")
