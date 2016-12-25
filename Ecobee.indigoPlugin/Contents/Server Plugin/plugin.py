@@ -283,7 +283,7 @@ class Plugin(indigo.PluginBase):
                 if sendSuccess:
                         indigo.server.log(u"sent resume_program to %s" % dev.address)
                 else:
-                        indigo.server.log(u"Failed to send resume_program to %s" % dev.address, isError=true)
+                        indigo.server.log(u"Failed to send resume_program to %s" % dev.address, isError=True)
 
         ######################
 	# Process action request from Indigo Server to change main thermostat's main mode.
