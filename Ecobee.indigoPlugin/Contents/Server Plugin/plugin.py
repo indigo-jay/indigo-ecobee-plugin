@@ -27,6 +27,17 @@ TEMP_FORMATTERS = {
 	'R': temperature_scale.Rankine()
 }
 
+#	PLugin-enforced minimum and maximum setpoint
+#	ranges per temperature scale
+ALLOWED_RANGE = {
+	'F': (40,95),
+	'C': (6,35),
+	'K': (277,308),
+	'R': (500,555)
+}
+
+# constrain a value to a range
+def clamp(n, minn, maxn): return min(max(n, minn), maxn)
 
 class Plugin(indigo.PluginBase):
 
@@ -88,6 +99,24 @@ class Plugin(indigo.PluginBase):
 		self._setTemperatureScale(scaleInfo[0])
 		self.update_logging(bool(valuesDict['debuggingEnabled'] and "y" == valuesDict['debuggingEnabled']))
 		return True
+
+	#	constrain a setpoint the range
+	#	based on temperature scale in use by the plugin
+	def _constrainSetpoint(self, value):
+		allowedRange = ALLOWED_RANGE[self.pluginPrefs[TEMPERATURE_SCALE_PLUGIN_PREF]]
+		return clamp(value,allowedRange[0],allowedRange[1])
+
+	#	convert value (in the plugin-defined scale)
+	#	to Fahrenheit
+	def _toFahrenheit(self,value):
+		scale = self.pluginPrefs[TEMPERATURE_SCALE_PLUGIN_PREF]
+		if scale == 'C':
+			return (9 * value)/5 + 32
+		elif scale == 'K':
+			return (9 * value)/5 - 459.67
+		elif scale == 'R':
+			return 459.67
+		return value
 
 	def _setTemperatureScale(self, value):
 		self.log.debug(u'setting temperature scale to %s' % value)
@@ -272,12 +301,12 @@ class Plugin(indigo.PluginBase):
 		hvac_mode = kHvacModeEnumToStrMap.get(newHvacMode, u"unknown")
 		indigo.server.log(u"mode: %s --> set to: %s" % (newHvacMode, kHvacModeEnumToStrMap.get(newHvacMode)))
  		indigo.server.log(u"address: %s set to: %s" % (int(dev.address), kHvacModeEnumToStrMap.get(newHvacMode)))
-		
+
 		sendSuccess = False
-		
+
 		if self.ecobee.set_hvac_mode_id(dev.pluginProps["address"], hvac_mode):
 			sendSuccess = True
-			
+
 		if sendSuccess:
 			indigo.server.log(u"sent \"%s\" mode change to %s" % (dev.name, hvac_mode))
 			if "hvacOperationMode" in dev.states:
@@ -288,20 +317,28 @@ class Plugin(indigo.PluginBase):
 	######################
 	# Process action request from Indigo Server to change a cool/heat setpoint.
 	def _handleChangeSetpointAction(self, dev, newSetpoint, logActionName, stateKey):
-		if newSetpoint < 40.0:
-			newSetpoint = 40.0		# Arbitrary -- set to whatever hardware minimum setpoint value is.
-		elif newSetpoint > 95.0:
-			newSetpoint = 95.0		# Arbitrary -- set to whatever hardware maximum setpoint value is.
-
+		oldNewSetpoint = newSetpoint
+		self.debugLog('newSetpoint is {}'.format(newSetpoint))
+		#	the newSetpoint is in whatever units configured in the pluginPrefs
+		scale = self.pluginPrefs[TEMPERATURE_SCALE_PLUGIN_PREF]
+		self.debugLog('scale in use is {}'.format(scale))
+		#	enforce minima/maxima based on the scale in use by the plugin
+		newSetpoint = self._constrainSetpoint(newSetpoint)
+		#	API uses F scale
+		newSetpoint = self._toFahrenheit(newSetpoint)
 		sendSuccess = False
+		#	Normalize units for consistent reporting
+		reportedNewSetpoint = '{}{}'.format(oldNewSetpoint,scale)
+		reportedHSP = '{}{}'.format(dev.heatSetpoint,scale)
+		reportedCSP = '{}{}'.format(dev.heatSetpoint,scale)
 
 		if stateKey == u"setpointCool":
-			indigo.server.log(u"set cool to: %s and leave heat at: %s" % (newSetpoint, dev.heatSetpoint))
+			indigo.server.log('set cool to: {} and leave heat at: {}'.format(reportedNewSetpoint,reportedHSP))
 			if self.ecobee.set_hold_temp_id(dev.address, newSetpoint, dev.heatSetpoint):
 				sendSuccess = True
-		
+
 		elif stateKey == u"setpointHeat":
-			indigo.server.log(u"set heat to: %s and leave cool at: %s" % (newSetpoint, dev.coolSetpoint))
+			indigo.server.log('set heat to: {} and leave cool at: {}'.format(reportedNewSetpoint,reportedCSP))
  			if self.ecobee.set_hold_temp_id(dev.address, dev.coolSetpoint, newSetpoint):
 				sendSuccess = True		# Set to False if it failed.
 
