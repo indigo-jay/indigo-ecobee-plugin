@@ -108,6 +108,9 @@ class EcobeeBase:
 
 		return True
 
+	def _update_server_authenticated(self):
+		self.dev.updateStateOnServer(key="authenticated", value=self.pyecobee.authenticated)
+
 	def _update_server_temperature(self, matchedSensor, stateKey):
 		tempCapability = _get_capability(matchedSensor, 'temperature')
 		log.debug('Sensor Temp: %s' % tempCapability.get('value'))
@@ -131,6 +134,9 @@ class EcobeeThermostat(EcobeeBase):
 
 	def updateServer(self):
 		log.debug("updating ecobee3 thermostat from server")
+
+		self._update_server_authenticated()
+
 		if not self.updatable():
 			return
 
@@ -193,6 +199,9 @@ class EcobeeSmartThermostat(EcobeeBase):
 
 	def updateServer(self):
 		log.debug("updating smart thermostat from server")
+
+		self._update_server_authenticated()
+
 		if not self.updatable():
 			return
 

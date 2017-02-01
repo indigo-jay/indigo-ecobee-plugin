@@ -110,6 +110,11 @@
 				<TriggerLabel>Auto-Home</TriggerLabel>
 				<ControlPageLabel>Auto-Home</ControlPageLabel>
 			</State>
+			<State id="authenticated" readonly="true">
+				<ValueType boolType="YesNo">Boolean</ValueType>
+				<TriggerLabel>Authenticated</TriggerLabel>
+				<ControlPageLabel>Authenticated</ControlPageLabel>
+			</State>
 		</States>
 	</Device>
 
@@ -125,6 +130,11 @@
 				<ValueType>String</ValueType>
 				<TriggerLabel>Climate</TriggerLabel>
 				<ControlPageLabel>Climate</ControlPageLabel>
+			</State>
+			<State id="authenticated" readonly="true">
+				<ValueType boolType="YesNo">Boolean</ValueType>
+				<TriggerLabel>Authenticated</TriggerLabel>
+				<ControlPageLabel>Authenticated</ControlPageLabel>
 			</State>
 		</States>
 	</Device>
