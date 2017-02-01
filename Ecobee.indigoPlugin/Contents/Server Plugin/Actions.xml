@@ -18,4 +18,13 @@
 			</Field>
 		</ConfigUI>
 	</Action>
+	<Action id="resumeProgram" deviceFilter="self">
+		<Name>Resume Set Program</Name>
+		<CallbackMethod>actionResumeProgram</CallbackMethod>
+		<ConfigUI>
+			<Field id="resume_all" type="checkbox" defaultValue="false">
+				<Label>Resume All Holds:</Label>
+			</Field>
+		</ConfigUI>
+	</Action>
 </Actions>
