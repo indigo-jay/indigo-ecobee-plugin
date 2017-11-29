@@ -349,7 +349,7 @@ class Plugin(indigo.PluginBase):
 		#	Normalize units for consistent reporting
 		reportedNewSetpoint = '{}{}'.format(oldNewSetpoint,scale)
 		reportedHSP = '{}{}'.format(dev.heatSetpoint,scale)
-		reportedCSP = '{}{}'.format(dev.heatSetpoint,scale)
+		reportedCSP = '{}{}'.format(dev.coldSetpoint,scale)
 
 		if stateKey == u"setpointCool":
 			indigo.server.log('set cool to: {} and leave heat at: {}'.format(reportedNewSetpoint,reportedHSP))
