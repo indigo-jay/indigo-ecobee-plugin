@@ -66,7 +66,7 @@
 				hvacOperationModeIsOff, hvacOperationModeIsHeat, hvacOperationModeIsCool,
 				hvacOperationModeIsAuto, hvacOperationModeIsProgramHeat, hvacOperationModeIsProgramCool,
 				hvacOperationModeIsProgramAuto,
-				hvacFanModeIsAuto, hvacFanModeIsAlwaysOn, hvacFaneModeIsCycle.
+				hvacFanModeIsAuto, hvacFanModeIsAlwaysOn, hvacFanModeIsCycle.
 
 			Additionally, the following writable states are inherited:
 
@@ -114,6 +114,11 @@
 				<ValueType boolType="YesNo">Boolean</ValueType>
 				<TriggerLabel>Authenticated</TriggerLabel>
 				<ControlPageLabel>Authenticated</ControlPageLabel>
+			</State>
+			<State id="fanMinOnTime" readonly="false">
+				<ValueType>Integer</ValueType>
+				<TriggerLabel>Minimum fan time</TriggerLabel>
+				<ControlPageLabel>Minimum fan time</ControlPageLabel>
 			</State>
 		</States>
 	</Device>
