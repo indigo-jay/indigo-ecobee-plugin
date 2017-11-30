@@ -259,6 +259,28 @@ class Ecobee(object):
                   " hold temp.  Refreshing tokens...")
             self.refresh_tokens()
 
+    def set_hold_temp_with_fan_id(self, id, cool_temp, heat_temp,
+                      hold_type="nextTransition"):
+        ''' Set a fan hold '''
+        url = 'https://api.ecobee.com/1/thermostat'
+        header = {'Content-Type': 'application/json;charset=UTF-8',
+                'Authorization': 'Bearer ' + self.access_token}
+        params = {'format': 'json'}
+        body = ('{"functions":[{"type":"setHold","params":{"holdType":"' + hold_type +
+                '","coolHoldTemp":"' + str(int(cool_temp * 10)) +
+                '","heatHoldTemp":"' + str(int(heat_temp * 10)) +
+                '","fan": "on"}}],'
+                '"selection":{"selectionType":"thermostats","selectionMatch"'
+                ':"' + id + '"}}')
+        request = requests.post(url, headers=header, params=params, data=body)
+        if request.status_code == requests.codes.ok:
+            self._invalidate_cache()
+            return request
+        else:
+            log.warning("Error connecting to Ecobee while attempting to turn"
+                  " fan on.  Refreshing tokens...")
+            self.refresh_tokens()
+
     def set_climate_hold(self, index, climate, hold_type="nextTransition"):
         ''' Set a climate hold - ie away, home, sleep '''
         url = 'https://api.ecobee.com/1/thermostat'
