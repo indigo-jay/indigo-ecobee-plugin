@@ -13,7 +13,7 @@
 	<key>CFBundleIdentifier</key>
 	<string>com.drjason.ecobee</string>
 	<key>CFBundleVersion</key>
-	<string>1.0.0</string>
+	<string>1.0.1</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -21,5 +21,13 @@
 			<string>http://ecobee.drjason.com</string>
 		</dict>
 	</array>
+	<key>GithubInfo</key>
+	<dict>
+		<key>GithubRepo</key>
+		<string>indigo-ecobee-plugin</string>
+		<key>GithubUser</key>
+		<string>jdhorne</string>
+	</dict>
+
 </dict>
 </plist>
