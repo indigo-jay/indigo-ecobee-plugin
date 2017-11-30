@@ -36,6 +36,11 @@ FAN_MODE_MAP = {
 	'on'  : indigo.kFanMode.AlwaysOn
 }
 
+kFanModeEnumToStrMap = {
+	indigo.kFanMode.Auto			: u"auto",
+	indigo.kFanMode.AlwaysOn		: u"on"
+}
+
 def _get_thermostats_json(ecobee):
 	ecobee.update()
 	return ecobee.get_thermostats()
@@ -127,8 +132,11 @@ class EcobeeBase:
 		self.dev.updateStateOnServer(key=u"occupied", value=occupied)
 		return occupied
 
+	def _update_server_fanMinOnTime(self, matchedSensor, stateKey, stateVal):
+		self.dev.updateStateOnServer(stateKey, value=stateVal)
 
 class EcobeeThermostat(EcobeeBase):
+	## This is for the Ecobee3 generation and later of products with occupancy detection and remote RF sensors
 	def __init__(self, address, dev, pyecobee):
 		EcobeeBase.__init__(self, address, dev, pyecobee)
 
@@ -150,6 +158,7 @@ class EcobeeThermostat(EcobeeBase):
 		settings = thermostat.get('settings')
 		hvacMode = settings.get('hvacMode')
 		fanMode = runtime.get('desiredFanMode')
+		fanMinOnTime = settings.get('fanMinOnTime')
 
 		status = thermostat.get('equipmentStatus')
 
@@ -169,6 +178,7 @@ class EcobeeThermostat(EcobeeBase):
 
 		self._update_server_smart_temperature(dispTemp, u'temperatureInput1')
 		self._update_server_temperature(matchedSensor, u'temperatureInput2')
+		self._update_server_fanMinOnTime(matchedSensor, u'fanMinOnTime', fanMinOnTime)
 		self._update_server_occupancy(matchedSensor)
 
 		# humidity
@@ -191,6 +201,7 @@ class EcobeeThermostat(EcobeeBase):
 		return matchedSensor
 
 class EcobeeSmartThermostat(EcobeeBase):
+	## This is the older 'Smart' and 'Smart Si' prior to Ecobee3
 	def __init__(self, address, dev, pyecobee):
 		self.address = address
 		self.dev = dev
