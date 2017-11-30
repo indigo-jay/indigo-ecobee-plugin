@@ -84,7 +84,7 @@ class Plugin(indigo.PluginBase):
 			self.pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF] = self.ecobee.access_token
 			self.pluginPrefs[AUTHORIZATION_CODE_PLUGIN_PREF] = self.ecobee.authorization_code
 			self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF] = self.ecobee.refresh_token
-		else:
+		if self.ecobee.refresh_token == '':
 			self.pluginPrefs[ACCESS_TOKEN_PLUGIN_PREF] = ''
 			self.pluginPrefs[AUTHORIZATION_CODE_PLUGIN_PREF] = ''
 			self.pluginPrefs[REFRESH_TOKEN_PLUGIN_PREF] = ''
