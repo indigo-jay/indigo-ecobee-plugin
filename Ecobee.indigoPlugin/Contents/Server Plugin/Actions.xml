@@ -27,4 +27,14 @@
 			</Field>
 		</ConfigUI>
 	</Action>
+	<Action id="activateComfortSetting" deviceFilter="self">
+		<Name>Activate Comfort Setting</Name>
+		<CallbackMethod>actionActivateComfortSetting</CallbackMethod>
+		<ConfigUI>
+			<Field id="climate" type="menu">
+				<Label>Comfort Setting:</Label>
+                <List class="self" filter="" method="climateListGenerator" dynamicReload="true"/>
+			</Field>
+		</ConfigUI>
+	</Action>
 </Actions>
