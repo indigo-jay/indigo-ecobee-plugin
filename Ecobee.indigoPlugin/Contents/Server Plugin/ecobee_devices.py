@@ -77,6 +77,16 @@ def _get_remote_sensor_json(ecobee, address):
 		if address == rs.get('code')
 	][0]
 
+def get_climates(ecobee, address):
+	return [
+		(rs.get('climateRef'), rs.get('name'))
+		for rs in _get_climates_json(ecobee, address)
+	]
+
+def _get_climates_json(ecobee, address):
+	thermostat = _get_thermostat_json(ecobee, address)
+	return thermostat.get('program').get('climates')
+
 def _get_capability(obj, cname):
 	ret = [c for c in obj.get('capability') if cname == c.get('type')][0]
 	return ret
